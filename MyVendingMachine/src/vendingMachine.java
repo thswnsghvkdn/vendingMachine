@@ -45,9 +45,9 @@ class Beverage // 음료수 클래스
 		for(int i = 0 ; i < 3; i++)
 			insertNode(new Item(name, price));
 	}
-	public void insertNode(Item item) // 음료수 추가 메소드 후에 라이브러리로 구현할 것 스택 
+	public void insertNode(Item item) // 음료수 추가 메소드 후에 라이브러리로 구현할 것 큐
 	{}
-	public void deleteNode(Item item) // 음료수 노드 제거 메소드 후에 라이브러리로 구현
+	public void deleteNode() // 음료수 노드 제거 메소드 후에 라이브러리로 구현
 	{}
 	
 }
@@ -58,11 +58,12 @@ class Machine
 	JLabel inputScreen;
 	int income; // 총 매출
 	int tempMoney; // 사용자가 삽입한 돈
+	int[] won = {1000, 500, 100, 50 ,10}; // 원 단위
 	int[] change = new int[5]; // 거스름돈 화폐단위는 5개가 있다.
 	int[] input = new int[5]; // 사용자가 입력한 화폐
 	Beverage[] beverage = new Beverage[6];// 음료수 6개
 	Machine(JLabel screen) // 생성자 
-	{
+	{		
 		inputScreen = screen;
 		tempMoney = 0; /// 현재 삽입된 돈을 0원으로 초기화
 		for(int i = 0 ; i < 5 ; i++)
@@ -85,8 +86,11 @@ class Machine
 				beverage[i].drinkButton.setBackground(Color.gray);
 		}
 	}
-	void pressMoney(int index) // 사용자가 음료버튼을 누를경우
+	
+	void pressMoney(int index) // 사용자가 화폐버튼을 누를경우
 	{
+		// 사용자가 최대금액 이상 입력하지 않도록 try catch로 처리
+		
 		input[index]++;
 		change[index]++;
 		switch(index)
@@ -110,6 +114,50 @@ class Machine
 		inputScreen.setText(Integer.toString(tempMoney)); // 투입 스크린 금액 갱신
 		changeColor(tempMoney); // 버튼 색상 갱신
 	}
+	void pressChange() // 잔돈 반환버튼  
+	{
+		int index = 0; // 잔돈 배열의 인덱스
+		int tempChange; // 각 단위마다 거스름돈 개수
+		
+		while(tempMoney > 0)
+		{
+			tempChange = tempMoney / won[index]; // 화폐개수
+			if(change[index] > tempChange) // 잔돈을 반환할 수 있는 경우
+			{
+				change[index] -= tempChange; // 잔돈개수 차감
+				tempMoney %= won[index]; // 해당 화폐개수만큼 잔돈차감
+				 // 애니메이션으로 해당 잔돈반환
+			}
+			else // 잔돈이 부족한 경우 
+			{
+				tempMoney = tempMoney - (change[index] * won[index]); // 가능한 거스름돈만 차감
+				change[index] = 0;
+			}
+			inputScreen.setText(Integer.toString(tempMoney)); // 투입 스크린 금액 갱신
+			changeColor(tempMoney); // 버튼 색상 갱신
+			index++; // 다음 화폐
+		}
+	}
+	void pressDrink(int index) // 음료버튼
+	{
+		if(beverage[index].drinkButton.getBackground().equals(Color.pink))
+		{
+			int price = beverage[index].item.getPrice();
+			// 객체 삭제함수
+			// beverage[index].deleteNode();
+			tempMoney -= price;
+			inputScreen.setText(Integer.toString(tempMoney)); // 투입 스크린 금액 갱신
+			changeColor(tempMoney); // 버튼 색상 갱신
+		}
+		
+		
+		if(index == 5 && tempMoney == 50 && beverage[index].drinkButton.getBackground().equals(Color.gray))
+			// 관리자 메뉴를 불러올 이스터에그 50원을 투입한 상태로 랜덤버튼 누르기
+		{
+			
+		}
+	}
+	
 	int getTempmoney() {return tempMoney;}
 	
 }
@@ -234,11 +282,6 @@ public class vendingMachine extends JFrame {
 
 		
 		JButton button_1 = new JButton("450");
-		button_1.setBackground(Color.GRAY);
-		button_1.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-			}
-		});
 		button_1.setBounds(22, 128, 57, 23);
 		panel_1.add(button_1);
 		
@@ -314,7 +357,7 @@ public class vendingMachine extends JFrame {
 		button_1000.setBounds(273, 437, 60, 32);
 		panel.add(button_1000);
 		
-		JLabel outScreen = new JLabel("   \uC794\uB3C8 \uBC18\uD658");
+		JLabel outScreen = new JLabel("    \uC794\uB3C8 \uBC18\uD658");
 		outScreen.setBounds(310, 185, 84, 29);
 		panel.add(outScreen);
 		
@@ -327,11 +370,81 @@ public class vendingMachine extends JFrame {
 		myMachine.newItem(4, "스타벅스", 750, text_5, button_5);
 		myMachine.newItem(5, "랜덤", 7000, text_6, button_6);
 		
+		JButton button_change = new JButton("\uC794\uB3C8");
+		button_change.setBounds(305, 223, 97, 23);
+		panel.add(button_change);
 		
+		myMachine.changeColor(0);
 		button_10.addActionListener(new ActionListener()  // 10원 버튼 클릭
 		{
 			public void actionPerformed(ActionEvent e) {
-				myMachine.pressMoney(0);
+				myMachine.pressMoney(0); // 10원 버튼의 인덱스 인수로 전달
+			}
+		});
+		button_50.addActionListener(new ActionListener() // 50원 버튼 클릭
+		{
+			public void actionPerformed(ActionEvent e) {
+				myMachine.pressMoney(1); // 50원 버튼의 인덱스 인수로 전달
+			}
+		});
+		button_100.addActionListener(new ActionListener() // 100원 버튼 클릭
+		{
+			public void actionPerformed(ActionEvent e) {
+				myMachine.pressMoney(2); // 100원 버튼의 인덱스 인수로 전달
+			}
+		});
+		button_500.addActionListener(new ActionListener() // 500원 버튼 클릭
+		{
+			public void actionPerformed(ActionEvent e) {
+				myMachine.pressMoney(3); // 500원 버튼의 인덱스 인수로 전달
+			}
+		});
+		button_1000.addActionListener(new ActionListener() // 1000원 버튼 클릭
+		{
+			public void actionPerformed(ActionEvent e) {
+				myMachine.pressMoney(4); // 1000원 버튼의 인덱스 인수로 전달
+			}
+		});
+		button_change.addActionListener(new ActionListener() // 잔돈 반환 버튼 클릭
+		{
+			public void actionPerformed(ActionEvent e) {
+				myMachine.pressChange();
+			}
+		});
+		button_1.addActionListener(new ActionListener() // 1번 음료수 버튼 클릭
+		{
+			public void actionPerformed(ActionEvent e) {
+				myMachine.pressDrink(0);
+			}
+		});
+		button_2.addActionListener(new ActionListener() // 2번 음료수 버튼 클릭
+		{
+			public void actionPerformed(ActionEvent e) {
+				myMachine.pressDrink(1);
+			}
+		});
+		button_3.addActionListener(new ActionListener() // 3번 음료수 버튼 클릭
+		{
+			public void actionPerformed(ActionEvent e) {
+				myMachine.pressDrink(2);
+			}
+		});
+		button_4.addActionListener(new ActionListener() // 4번 음료수 버튼 클릭
+		{
+			public void actionPerformed(ActionEvent e) {
+				myMachine.pressDrink(3);
+			}
+		});
+		button_5.addActionListener(new ActionListener() // 5번 음료수 버튼 클릭
+		{
+			public void actionPerformed(ActionEvent e) {
+				myMachine.pressDrink(4);
+			}
+		});
+		button_6.addActionListener(new ActionListener() // 6번 음료수 버튼 클릭
+		{
+			public void actionPerformed(ActionEvent e) {
+				myMachine.pressDrink(5);
 			}
 		});
 	}
