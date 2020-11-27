@@ -1,19 +1,21 @@
-import java.awt.BorderLayout;
 import java.awt.EventQueue;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.net.ServerSocket;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Iterator;
+import java.util.Vector;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+import java.awt.List;
 
 import lib.Queue;
-
-import javax.swing.JTextField;
-import java.awt.List;
 
 class ManageItem // 각 음료의 클래스
 {
@@ -115,38 +117,140 @@ public class Manager extends JFrame {
 	private JPanel contentPane;
 
 	private ServerSocket serverSocket;
-	private Socket clientSocket;
 	private DataInputStream dataInputStream; // 입력 스트림
 	private DataOutputStream dataOutputStream; // 출력 스트림
+	ExecutorService executorService; // 쓰레드 풀
+	Vector<Client> connections =new Vector<Client>(); // 동기화가 가능하여 속도는 느리더라도 좀 더 안전한 벡터를 사용
 	
+
 	
-	
-	public void serverSetting(List list) {
+	public void serverSetting(List list,ManageMachine m) {
+		// 스레드 풀을 만들고 cpu가 가용할 수 있는 프로세스 수로 인수를 준다.
+		executorService = Executors.newFixedThreadPool(
+			Runtime.getRuntime().availableProcessors()
+		);
+		
 		try {
 			serverSocket = new ServerSocket(10002); // 바인드
 			list.add("열림");
 			System.out.println("서버열림");
-			clientSocket = serverSocket.accept();
-			dataInputStream = new DataInputStream(clientSocket.getInputStream());
-			dataOutputStream = new DataOutputStream(clientSocket.getOutputStream());
 		} catch (Exception e)
 		{
-			
+			if(!serverSocket.isClosed()) // 서버를 안전하게 닫아준다.
+				stopServer();
+			return;
 		}
+		
+		Runnable runnable = new Runnable() {
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+				while(true) // 클라이언트의 접속대기를 반복
+				{
+					Socket clientSocket;
+					try {
+						clientSocket = serverSocket.accept();
+						list.add(clientSocket.getRemoteSocketAddress().toString()); // 접속된 클라이언트 주소
+						Client client = new Client(clientSocket,m ,list);
+						connections.add(client); // 벡터에 클라이언트 소켓을 추가한다.
+						// connections.size() 연결개수
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						if(!serverSocket.isClosed())
+							stopServer();
+						break; // 클라이언트의 연결요청 응답중 예외가 발생할 경우 서버를 종료하고 반복문을 종료한다.
+					} 
+
+				}
+			}
+		};
+		
+		executorService.submit(runnable); // 작업객체를 스레드풀에 인수로 전달한다.
 	}
-	
-	public void closeAll()
+	public void stopServer()
 	{
 		try {
-		serverSocket.close();
-		clientSocket.close();
-		dataInputStream.close();
-		dataOutputStream.close();
-		} catch (Exception e)
-		{
-			
-		}
+		Iterator<Client> iterator = connections.iterator();
+		while(iterator.hasNext()) { // 클라이언트들을 제거
+			Client client = iterator.next();
+			client.socket.close();
+			iterator.remove();
+		  }
+		  if(serverSocket != null && !serverSocket.isClosed()) { // 클라이언트들을 모두 종료시킨후 서버를 종료
+			  serverSocket.close();
+		  }
+		  if(executorService != null && !executorService.isShutdown()) { // 스레트 풀 종료
+			  executorService.shutdown();
+		  }
+		} catch(Exception e) {}
 	}
+	class Client
+	{
+		Socket socket;
+		DataOutputStream outputStream;
+		DataInputStream inputStream;
+		public Client(Socket socket_,ManageMachine m, List list)
+		{
+			socket = socket_;
+			try {
+			outputStream = new DataOutputStream(socket.getOutputStream());
+			inputStream = new DataInputStream(socket.getInputStream());
+			} catch(Exception e) {}
+			dataRecv(m, list);
+		}
+		
+		public void dataRecv(ManageMachine m, List list) {
+			Runnable runnable = new Runnable() { // 항상 사용자의 입력을 기다리도록 while문을 스레드로 동작시킨다.
+				public void run() {
+					int numData;
+					String strData;
+					try {
+					while(true) 
+						{
+							int read = numData = dataInputStream.readInt();
+							if(read == -1)
+								throw new IOException();
+							strData =  dataInputStream.readUTF(); 
+							if(strData.equals("input")) // 사용자가 화폐를 투입한경우
+							{
+								m.inputMoney(numData);
+								list.add("사용자 동전투입");
+							}
+							else if(strData.equals("drink")) // 사용자가 음료버튼을 클릭한경우
+							{  
+								int price = m.retDrink(numData);
+								m.income += price; // 매출증가
+								String text = m.beverage[numData].queue.getName();
+								String message;
+								message = "사용자가 " + text + "을 사갔습니다." ;
+								list.add(message);
+							}
+						
+						}
+					}
+					catch (Exception e) 
+					{}
+				}
+			};
+			executorService.submit(runnable);
+				
+		}
+
+		
+		void send(String data)
+		{
+			try {
+				DataOutputStream outputStream = new DataOutputStream(socket.getOutputStream());
+				outputStream.writeUTF(data);
+			} catch(Exception e)
+			{
+				
+			}
+		}
+		
+		
+	}
+	
 	
 	public void inputDrink(ManageMachine m) {
 		try {
@@ -180,39 +284,7 @@ public class Manager extends JFrame {
 		}
 	}
 	
-	public void dataRecv(ManageMachine m, List list) {
-		new Thread (new Runnable() { // 항상 사용자의 입력을 기다리도록 while문을 스레드로 동작시킨다.
-			public void run() {
-				int numData;
-				String strData;
-				try {
-				while(true) 
-					{
-						numData = dataInputStream.readInt();
-						strData =  dataInputStream.readUTF(); 
-						if(strData.equals("input")) // 사용자가 화폐를 투입한경우
-						{
-							m.inputMoney(numData);
-							list.add("사용자 동전투입");
-						}
-						else if(strData.equals("drink")) // 사용자가 음료버튼을 클릭한경우
-						{  
-							int price = m.retDrink(numData);
-							m.income += price; // 매출증가
-							String text = m.beverage[numData].queue.getName();
-							String message;
-							message = "사용자가 " + text + "을 사갔습니다." ;
-							list.add(message);
-						}
-					}
-				}
-				catch (Exception e) 
-				{}
-			}
-		}).start();
-
-					
-	}
+	
 
 	
 
@@ -259,7 +331,6 @@ public class Manager extends JFrame {
 		List list = new List();
 		list.setBounds(32, 41, 288, 327);
 		contentPane.add(list);
-		serverSetting(list);
-		dataRecv(manageMachine , list);
+		serverSetting(list, manageMachine);
 	}
 }
