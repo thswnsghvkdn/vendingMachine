@@ -2,6 +2,8 @@ import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -144,12 +146,14 @@ class loginField {
 			button[i].pressShift();
 		}
 	}
-	public void pressRegister()
+	public void pressRegister(DBconnector db, Machine m) // 등록버튼을 누른경우
 	{
-		String temp = pwStack.retString();
-		if(temp.matches(".*[0-9|!-%].*") && temp.length() > 5)
+		String id = idStack.retString();
+		String tempPw = pwStack.retString();
+		if(tempPw.matches(".*[0-9|!-%].*") && tempPw.length() > 5)
 		{
-			
+			db.regist(id, tempPw); // 데이터베이스에 아이디를 등록한다.
+			m.setId(id); // 아이디를 자판기 객체에 등록하여 해당아이디에 등록된 정보를 열람할 수 있도록 한다.
 		}
 		else 
 		{
@@ -163,7 +167,10 @@ class loginField {
 public class login extends JFrame {
 
 	private JPanel contentPane;
-
+	public loginField field;
+	DataInputStream dataIn; // 입력 스트림
+	DataOutputStream dataOut; // 출력 스트림
+	
 	/**
 	 * Launch the application.
 	 */
@@ -171,8 +178,8 @@ public class login extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					login frame = new login();
-					frame.setVisible(true);
+					//login frame = new login();
+					//frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -183,7 +190,13 @@ public class login extends JFrame {
 	/**
 	 * Create the frame.
 	 */
-	public login() {
+	public login(Machine m) {
+		
+
+		DBconnector db = new DBconnector();
+		
+		
+		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 338, 469);
 		contentPane = new JPanel();
@@ -201,7 +214,7 @@ public class login extends JFrame {
 		password.setBounds(77, 105, 219, 23);
 		contentPane.add(password);
 		
-		loginField field = new loginField(ID , password); // loginField 클래스 등록
+		field = new loginField(ID , password); // loginField 클래스 등록
 
 		
 		
@@ -296,6 +309,11 @@ public class login extends JFrame {
 		contentPane.add(lblPassword);
 		
 		JButton lgnBtn = new JButton("Login");
+		lgnBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				
+			}
+		});
 		lgnBtn.setBackground(Color.CYAN);
 		lgnBtn.setBounds(22, 378, 112, 23);
 		contentPane.add(lgnBtn);
@@ -341,7 +359,8 @@ public class login extends JFrame {
 		});
 		regBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				field.pressRegister();
+				field.pressRegister(db, m);
+				dispose(); // 해당 로그인 창을 닫는다.
 			}
 		});
 	}

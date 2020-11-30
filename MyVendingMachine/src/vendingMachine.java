@@ -30,15 +30,20 @@ class Beverage // 음료수 클래스
 
 class Machine
 {
+	private String id;
 	JLabel inputScreen;
 	int tempMoney; // 사용자가 삽입한 돈
-
 	Beverage[] beverage = new Beverage[6];// 음료수 6개
 	Machine(JLabel screen) // 생성자 
 	{		
 		inputScreen = screen;
 		tempMoney = 0; /// 현재 삽입된 돈을 0원으로 초기화
 
+	}
+	
+	void setId(String id)
+	{
+		this.id = id;
 	}
 	void newItem(int index, JLabel label, JButton button) // 새로운 음료 생성 메소드
 	{
@@ -85,7 +90,7 @@ class Machine
 		inputScreen.setText(Integer.toString(tempMoney)); // 투입 스크린 금액 갱신
 		changeColor(tempMoney); // 버튼 색상 갱신		
 	}
-	boolean pressDrink(int index) // 음료버튼
+	int pressDrink(int index) // 음료버튼
 	{
 		if(beverage[index].drinkButton.getBackground().equals(Color.pink))
 		{
@@ -94,15 +99,15 @@ class Machine
 			tempMoney -= price;
 			inputScreen.setText(Integer.toString(tempMoney)); // 투입 스크린 금액 갱신
 			changeColor(tempMoney); // 버튼 색상 갱신
-			return true;
+			return 1;
 		}
 		
 		if(index == 5 && tempMoney == 50 && beverage[index].drinkButton.getBackground().equals(Color.gray))
 			// 관리자 메뉴를 불러올 이스터에그 50원을 투입한 상태로 랜덤버튼 누르기
-		{
-			return true;
+		{	
+			return -1;
 		}
-		return false;
+		return 0;
 	}
 	
 	int getTempmoney() {return tempMoney;}
@@ -119,7 +124,8 @@ public class vendingMachine extends JFrame {
 	private DataInputStream dataInputStream; // 입력 스트림
 	private DataOutputStream dataOutputStream; // 출력 스트림
 	
-	
+	//login loginMenu = new login();
+
 	public void connect()
 	{
 		try {
@@ -387,7 +393,7 @@ public class vendingMachine extends JFrame {
 		{
 			public void actionPerformed(ActionEvent e) {
 				// myMachine.pressDrink(0);
-				if(myMachine.pressDrink(0)) {
+				if(myMachine.pressDrink(0) == 1) {
 				 dataSend(0 , "drink"); // 서버에 인덱스를 보낸다.
 					
 				 Timer timer = new Timer(50, new ActionListener() {
@@ -413,7 +419,7 @@ public class vendingMachine extends JFrame {
 		button_2.addActionListener(new ActionListener() // 2번 음료수 버튼 클릭
 		{
 			public void actionPerformed(ActionEvent e) {
-				if(myMachine.pressDrink(1))
+				if(myMachine.pressDrink(1) == 1)
 				 dataSend(1 , "drink"); // 서버에 인덱스를 보낸다.
 				outlet.setIcon(null);
 
@@ -422,29 +428,34 @@ public class vendingMachine extends JFrame {
 		button_3.addActionListener(new ActionListener() // 3번 음료수 버튼 클릭
 		{
 			public void actionPerformed(ActionEvent e) {
-				if(myMachine.pressDrink(2))
+				if(myMachine.pressDrink(2) == 1)
 				 dataSend(2 , "drink"); // 서버에 인덱스를 보낸다.
 			}
 		});
 		button_4.addActionListener(new ActionListener() // 4번 음료수 버튼 클릭
 		{
 			public void actionPerformed(ActionEvent e) {
-				if(myMachine.pressDrink(3))
+				if(myMachine.pressDrink(3) == 1)
 				 dataSend(3 , "drink"); // 서버에 인덱스를 보낸다.
 			}
 		});
 		button_5.addActionListener(new ActionListener() // 5번 음료수 버튼 클릭
 		{
 			public void actionPerformed(ActionEvent e) {
-				if(myMachine.pressDrink(4))
+				if(myMachine.pressDrink(4) == 1)
 				 dataSend(4 , "drink"); // 서버에 인덱스를 보낸다.
 			}
 		});
 		button_6.addActionListener(new ActionListener() // 6번 음료수 버튼 클릭
 		{
 			public void actionPerformed(ActionEvent e) {
-				if(myMachine.pressDrink(5))
+				if(myMachine.pressDrink(5) == 1)
 				 dataSend(5 , "drink"); // 서버에 인덱스를 보낸다.
+				else if(myMachine.pressDrink(5) == -1)
+				{
+					login Loginframe = new login(myMachine);
+					Loginframe.setVisible(true);
+				}
 			}
 		});
 	}
