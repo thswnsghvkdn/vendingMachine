@@ -146,14 +146,13 @@ class loginField {
 			button[i].pressShift();
 		}
 	}
-	public void pressRegister(DBconnector db, Machine m) // 등록버튼을 누른경우
+	public void pressRegister(DBconnector db) // 등록버튼을 누른경우
 	{
 		String id = idStack.retString();
 		String tempPw = pwStack.retString();
 		if(tempPw.matches(".*[0-9|!-%].*") && tempPw.length() > 5)
 		{
 			db.regist(id, tempPw); // 데이터베이스에 아이디를 등록한다.
-			m.setId(id); // 아이디를 자판기 객체에 등록하여 해당아이디에 등록된 정보를 열람할 수 있도록 한다.
 		}
 		else 
 		{
@@ -165,9 +164,10 @@ class loginField {
 
 
 public class login extends JFrame {
-
+	public JButton regBtn; // 등록버튼은 자판기 객체에서 관리할 것!
 	private JPanel contentPane;
 	public loginField field;
+	public DBconnector db = new DBconnector();
 	DataInputStream dataIn; // 입력 스트림
 	DataOutputStream dataOut; // 출력 스트림
 	
@@ -190,10 +190,10 @@ public class login extends JFrame {
 	/**
 	 * Create the frame.
 	 */
-	public login(Machine m) {
+	public login() {
+		
 		
 
-		DBconnector db = new DBconnector();
 		
 		
 		
@@ -318,7 +318,7 @@ public class login extends JFrame {
 		lgnBtn.setBounds(22, 378, 112, 23);
 		contentPane.add(lgnBtn);
 		
-		JButton regBtn = new JButton("Register");
+		regBtn = new JButton("Register");
 
 		regBtn.setBackground(Color.CYAN);
 		regBtn.setBounds(189, 378, 97, 23);
@@ -357,11 +357,6 @@ public class login extends JFrame {
 				field.pressBack();
 			}
 		});
-		regBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				field.pressRegister(db, m);
-				dispose(); // 해당 로그인 창을 닫는다.
-			}
-		});
+
 	}
 }

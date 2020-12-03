@@ -1,5 +1,6 @@
 import java.awt.Color; // 특수문자 검사용 라이브러리
 import java.awt.EventQueue;
+import java.awt.List;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.DataInputStream;
@@ -10,6 +11,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
@@ -30,6 +32,7 @@ class Beverage // 음료수 클래스
 
 class Machine
 {
+
 	private String id;
 	JLabel inputScreen;
 	int tempMoney; // 사용자가 삽입한 돈
@@ -114,12 +117,21 @@ class Machine
 	
 }
 
-
-
+class MyException extends Exception{
+	public MyException(String s) {
+		super(s);
+	}
+}
 public class vendingMachine extends JFrame {
 
+	private int orderIndex; // 사용자가 음료 주문시 음료의 위치
+	private String orderName; // 사용자가 음료 주문시 주문할 음료의 이름
+	private String orderPrice; // 사용자가 음료 주문시 주문할 음료의 이름
+	private int orderNum; // 사용자가 음료 주문시 음료의 위치
+	
+	private Machine myMachine;
 	private JPanel contentPane;
-
+	List list;
 	private Socket clientSocket;
 	private DataInputStream dataInputStream; // 입력 스트림
 	private DataOutputStream dataOutputStream; // 출력 스트림
@@ -140,20 +152,84 @@ public class vendingMachine extends JFrame {
 		try {
 		dataInputStream = new DataInputStream(clientSocket.getInputStream());
 		dataOutputStream = new DataOutputStream(clientSocket.getOutputStream());
+		System.out.println("데이터 스트림 연결");
 		} catch(Exception e) {
 			
 		}
+		
 	}
 	public void dataSend(int numData,String stringData)
 	{	
-			try {
-				dataOutputStream.writeInt(numData);
-				dataOutputStream.writeUTF(stringData);
-				}catch(Exception e)
-				{
-					
+		try {
+			dataOutputStream.writeUTF(stringData);
+			dataOutputStream.writeInt(numData);
+			}catch(Exception e)
+			{
+				System.out.println("데이터를 보내는 중 문제 발견");
+				System.out.println(e.getMessage());
+			}
+	}		
+	
+	
+	public void dataRecv() {
+		new Thread() { // 항상 사용자의 입력을 기다리도록 while문을 스레드로 동작시킨다.
+			public void run() {
+				int numData;
+				String strData;
+				String str = "";
+				try {
+				while(true) 
+					{
+						strData =  dataInputStream.readUTF();  // 클라이언트의 요청 파악
+						
+						if(strData.equals("stock")) // 재고 버튼을 클릭한 경우
+						{
+							list.add("음료 재고 현황");
+							for(int i = 0 ; i < 5 ; i++)
+							{
+								numData = dataInputStream.readInt();
+								str = myMachine.beverage[i].nameText.getText() + " " + numData + "개 남음";
+								list.add(str);
+							}
+
+							
+							list.add("화폐 재고 현황");
+							String won[] = {"10", "50", "100" , "500" ,"1000"};
+							for(int i = 0 ; i < 5 ; i++)
+							{
+								numData = dataInputStream.readInt();
+								str = won[i] + "원 " + numData + "개 남음";
+								list.add(str);
+							}
+
+							
+						}
+						else if(strData.equals("income")) 
+						{
+							int income = dataInputStream.readInt();
+							list.add("하루 매출 현황 : " + income);
+						}
+						else if(strData.equals("collect")) 
+						{
+							
+						}
+						else if(strData.equals("order")) // 음료주문 
+						{
+							
+						}
+						else if(strData.equals("fill"))  // 잔돈 보충 
+						{
+							
+						}
+	
+					}
 				}
-		
+				catch (Exception e) 
+				{}
+			}
+		}.start();
+
+
 	}
 	
 	public void repaint(vendingMachine frame)
@@ -184,8 +260,7 @@ public class vendingMachine extends JFrame {
 	public vendingMachine() {
 		connect();
 		streamSetting();
-		vendingMachine self = this;
-
+		dataRecv();
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 499, 561);
@@ -205,7 +280,7 @@ public class vendingMachine extends JFrame {
 		insertScreen.setBounds(310, 84, 84, 32);
 		panel.add(insertScreen);
 		
-		Machine myMachine = new Machine(insertScreen); // Machine 객체 생성
+		myMachine = new Machine(insertScreen); // Machine 객체 생성
 		
 		JPanel panel_1 = new JPanel();
 		panel_1.setBackground(Color.WHITE);
@@ -411,9 +486,7 @@ public class vendingMachine extends JFrame {
 					        }
 					      });
 					    timer2.setRepeats(false);
-					     timer2.start();					
-					     outlet.revalidate();
-			    }
+					     timer2.start();								    }
 			}
 		});
 		button_2.addActionListener(new ActionListener() // 2번 음료수 버튼 클릭
@@ -442,7 +515,7 @@ public class vendingMachine extends JFrame {
 		button_5.addActionListener(new ActionListener() // 5번 음료수 버튼 클릭
 		{
 			public void actionPerformed(ActionEvent e) {
-				if(myMachine.pressDrink(4) == 1)
+				if(myMachine.pressDrink(4) == 1) // 매출
 				 dataSend(4 , "drink"); // 서버에 인덱스를 보낸다.
 			}
 		});
@@ -453,9 +526,102 @@ public class vendingMachine extends JFrame {
 				 dataSend(5 , "drink"); // 서버에 인덱스를 보낸다.
 				else if(myMachine.pressDrink(5) == -1)
 				{
-					login Loginframe = new login(myMachine);
+					login Loginframe = new login();
 					Loginframe.setVisible(true);
+					Loginframe.regBtn.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent e) {
+							Loginframe.field.pressRegister(Loginframe.db);
+							Admin admin = new Admin();
+							list = admin.list;
+							admin.setVisible(true);
+							adminButtonFunction(admin);
+							Loginframe.dispose(); // 해당 로그인 창을 닫는다.
+						}
+					});
 				}
+			}
+		});
+	}
+	
+	private void adminButtonFunction(Admin admin) // 관리자 페이지 버튼 기능 등록
+	{
+		admin.changeBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				 dataSend(1 , "change");
+			}
+		});
+		admin.fillBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				String temp = JOptionPane.showInputDialog("잔돈을 몇개로 충전 하시겠습니까?");
+				dataSend(Integer.parseInt(temp) , "fill");
+			}
+		});
+		admin.incomeBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				 dataSend(1 , "income");
+			}
+		});
+		admin.stockBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				 dataSend(1 , "stock");
+			}
+		});
+
+		admin.orderBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				// orderDrink 메세지를 띄워서 사용자가 추가할 음료의 정보를 받아온다.
+				OrderDrinkMessage message = new OrderDrinkMessage(); 
+				// 콤보박스에 현재음료이름 채워넣기 사용자가 음료위치를 선택한다.
+				for(int i = 0 ; i < 5 ; i++)
+				{
+					message.comboBox.addItem(myMachine.beverage[i].nameText.getText());
+				}
+				message.setVisible(true);
+				message.submit.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						 orderIndex = message.comboBox.getSelectedIndex(); // 주문할 위치
+						 orderNum = message.comboBox_1.getSelectedIndex() + 1; // 주문할 수량
+						 
+						 orderName = message.nameField.getText();
+						 orderPrice = message.priceField.getText();
+						// 메시지 박스의 정보가 문제없으면 큐에 노드를 삽입한다.
+						 try {
+							 if(orderName.length() == 0) throw new MyException("이름을 입력해주세요");
+							 for(int i = 0 ; i < orderPrice.length() ; i++)
+							 {
+								 char tmp = orderPrice.charAt(i);
+								 if(Character.isDigit(tmp) == false)
+									 throw new MyException("금액을 입력해주세요");
+							 }
+							 message.dispose();
+					
+						 }catch(MyException er)
+						 {
+							 JOptionPane.showMessageDialog(null,er.getMessage());
+						 }
+						 
+					}
+				});
+
+				try {
+					dataOutputStream.writeUTF("order");
+					dataOutputStream.writeInt(orderIndex);
+					dataOutputStream.writeInt(orderNum * 10);
+					dataOutputStream.writeUTF(orderName);
+					dataOutputStream.writeInt(Integer.parseInt(orderPrice));
+
+					}catch(Exception err)
+					{
+						System.out.println("데이터를 보내는 중 문제 발견");
+						System.out.println(err.getMessage());
+					}
+			}
+		});
+		// 수집버튼을 누를때에는 최소로 남겨놓을 잔돈을 사용자에게 입력받아 서버로 전달한다. 사용자는 남겨놓은 화폐를 제외한 금액을 서버로부터 확인 할 수 있다.
+		admin.collectBtn.addActionListener(new ActionListener() { 
+			public void actionPerformed(ActionEvent e) {
+				String temp = JOptionPane.showInputDialog("잔돈을 몇개 남겨 놓으시겠습니까?");
+				dataSend(Integer.parseInt(temp) , "collect");
 			}
 		});
 	}
