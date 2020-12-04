@@ -16,9 +16,20 @@ import javax.swing.border.EmptyBorder;
 import java.awt.List;
 
 import lib.Queue;
+import javax.swing.JLabel;
+import java.awt.Font;
+import java.awt.Color;
+import lib.Heap;
 
-
-
+class DrinkStock {
+	public int stock; // 음료의 재고
+	public int index; // 음료의 인덱스
+	DrinkStock(int index,int stock)
+	{
+		this.index = index;
+		this.stock = stock;
+	}
+}
 class ManageBeverage // 음료수 클래스
 {
 	
@@ -37,6 +48,10 @@ class ManageBeverage // 음료수 클래스
 	public void deleteNode() // 음료수 노드 제거 메소드 후에 라이브러리로 구현
 	{
 		queue.deque();
+	}
+	public int getStock()
+	{
+		return queue.getStock();
 	}
 	
 }
@@ -106,6 +121,7 @@ public class Manager extends JFrame {
 	ManageMachine manageMachine = new ManageMachine();
 	List list = new List();
 	private JPanel contentPane;
+	private Heap heap = new Heap();
 
 	private ServerSocket serverSocket;
 	private DataInputStream dataInputStream; // 입력 스트림
@@ -136,13 +152,15 @@ public class Manager extends JFrame {
 			@Override
 			public void run() {
 				// TODO Auto-generated method stub
+				int index = 1;
+
 				while(true) // 클라이언트의 접속대기를 반복
 				{
 					Socket clientSocket;
 					try {
 						clientSocket = serverSocket.accept();
 						list.add(clientSocket.getRemoteSocketAddress().toString()); // 접속된 클라이언트 주소
-						Client client = new Client(clientSocket);
+						Client client = new Client(clientSocket, index++);
 						connections.add(client); // 벡터에 클라이언트 소켓을 추가한다.
 						// connections.size() 연결개수
 					} catch (IOException e) {
@@ -177,11 +195,13 @@ public class Manager extends JFrame {
 	}
 	class Client
 	{
+		int id; // 클라이언트 아이디
 		Socket socket;
 		DataOutputStream outputStream;
 		DataInputStream inputStream;
-		public Client(Socket socket_)
+		public Client(Socket socket_, int id)
 		{
+			this.id = id;
 			socket = socket_;
 			try {
 			outputStream = new DataOutputStream(socket.getOutputStream());
@@ -210,12 +230,21 @@ public class Manager extends JFrame {
 							else if(strData.equals("drink")) // 사용자가 음료버튼을 클릭한경우
 							{  
 								numData = inputStream.readInt();
-								int price = manageMachine.retDrink(numData);
-								manageMachine.income += price; // 매출증가
-								String text = manageMachine.beverage[numData].queue.getName();
-								String message;
-								message = "사용자가 " + text + "을 사갔습니다." ;
-								list.add(message);
+								if(numData == 5) // 랜덤 음료 부분
+								{
+									numData = heap.delete(); // 가장 많이 남은 음료의 인덱스
+								}
+								
+								
+								if(manageMachine.beverage[numData].getStock() > 0) {
+									int price = manageMachine.retDrink(numData);
+									manageMachine.income += price; // 매출증가
+									String text = manageMachine.beverage[numData].queue.getName();
+									String message;
+									message = "사용자가 " + text + "을 사갔습니다." ;
+									list.add(message);
+									heap.insert(numData, manageMachine.beverage[numData].getStock()); // 줄어든 사이즈로 힙 트리를 업데이트
+								}
 							}
 							else if(strData.equals("stock")) // 재고 요청
 							{
@@ -246,9 +275,10 @@ public class Manager extends JFrame {
 									if(manageMachine.change[i] <= minimum) // 남은 화폐 개수가 최소기준 보다 적다면 스킵
 										continue;
 									// sum 변수에 최소개수를 제외한 나머지 화폐들을 합한다.
-									sum += ( manageMachine.change[i] - minimum) * won[i]; 
+									manageMachine.change[i] -= minimum;
+									sum += ( manageMachine.change[i]) * won[i]; 
 								}
-								list.add(sum + "원 수금하셨습니다.");
+								list.add("클라이언트 " + id + " : " +sum + "원 수금하셨습니다.");
 							}
 							else if(strData.equals("order")) // 음료 주문
 							{
@@ -258,7 +288,8 @@ public class Manager extends JFrame {
 								String beverageName = inputStream.readUTF(); // 음료 이름
 								int beveragePrice = inputStream.readInt(); // 음료 가격
 								manageMachine.orderDrink(index, beverageName, beveragePrice, orderNum);
-								list.add(beverageName + "음료" + orderNum + "개 주문, 가격 : " + beveragePrice);
+								list.add("클라이언트 "+ id + "에서 " + beverageName + "음료" + orderNum + "개 발주, 가격 : " + beveragePrice);
+								heap.insert(index, manageMachine.beverage[index].getStock()); // 발주된 재고 기준으로 힙트리를 업데이트
 							}	
 							else if(strData.equals("fill")) // 잔돈 보충
 							{
@@ -267,7 +298,8 @@ public class Manager extends JFrame {
 								int maximum = inputStream.readInt(); // 보충할 잔돈총량
 								int sum; // 보충한 총 잔돈 액수
 								int index; // 보충할 잔돈 개수
-								list.add("보충 현황");
+								list.add("클라이언트 " + id +"에서 잔돈을 보충하였습니다.");
+
 								for(int i = 0 ; i < 5; i++)
 								{
 									sum = 0;
@@ -279,7 +311,7 @@ public class Manager extends JFrame {
 										manageMachine.change[i]++;
 									}
 									sum = index * won[i]; 
-									list.add(won[i] + "원 " +index + "개 보충, 총" + sum + "원 충전하셨습니다.");
+									list.add(won[i] + "원 " +index + "개 보충, 총" + sum + "원 보충하였습니다.");
 								}
 							}
 						}
@@ -353,6 +385,7 @@ public class Manager extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
+
 					Manager frame = new Manager();
 					frame.setVisible(true);
 				} catch (Exception e) {
@@ -375,18 +408,27 @@ public class Manager extends JFrame {
 		manageMachine.newItem(4, "스타벅스", 750);
 		manageMachine.newItem(5, "랜덤", 700);
 		
+		// 재고를 기준으로 초기 최대 힙을 구성한다.
+		for(int i = 0 ; i < 5 ; i++)
+			heap.insert(i, 3);
 		
 		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 534, 491);
+		setBounds(100, 100, 383, 488);
 		contentPane = new JPanel();
+		contentPane.setForeground(Color.CYAN);
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
 		
 
-		list.setBounds(32, 41, 288, 327);
+		list.setBounds(34, 67, 288, 327);
 		contentPane.add(list);
+		
+		JLabel lblNewLabel = new JLabel("Vending machine Server");
+		lblNewLabel.setFont(new Font("굴림", Font.BOLD, 15));
+		lblNewLabel.setBounds(81, 10, 205, 39);
+		contentPane.add(lblNewLabel);
 		serverSetting();
 	}
 }

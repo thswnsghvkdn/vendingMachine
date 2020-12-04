@@ -146,18 +146,21 @@ class loginField {
 			button[i].pressShift();
 		}
 	}
-	public void pressRegister(DBconnector db) // 등록버튼을 누른경우
+	public boolean pressRegister(DBconnector db) // 등록버튼을 누른경우
 	{
 		String id = idStack.retString();
 		String tempPw = pwStack.retString();
 		if(tempPw.matches(".*[0-9|!-%].*") && tempPw.length() > 5)
 		{
-			db.regist(id, tempPw); // 데이터베이스에 아이디를 등록한다.
+			if(db.regist(id, tempPw))
+				return true; // 데이터베이스에 아이디를 등록한다.
 		}
 		else 
 		{
 			JOptionPane.showMessageDialog(null, "비밀번호는 5자리 이상 , 숫자 혹은 특수문자를 포함하여야 합니다.");
+			return false;
 		}
+		return false;
 	}
 	
 }

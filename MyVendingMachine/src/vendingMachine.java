@@ -211,11 +211,11 @@ public class vendingMachine extends JFrame {
 						}
 						else if(strData.equals("collect")) 
 						{
-							
+							int income = dataInputStream.readInt();
+							list.add(income + "원 수금하셨습니다.");
 						}
 						else if(strData.equals("order")) // 음료주문 
 						{
-							
 						}
 						else if(strData.equals("fill"))  // 잔돈 보충 
 						{
@@ -270,6 +270,7 @@ public class vendingMachine extends JFrame {
 		contentPane.setLayout(null);
 		
 		JPanel panel = new JPanel();
+		panel.setForeground(Color.PINK);
 		panel.setBounds(27, 26, 425, 486);
 		contentPane.add(panel);
 		panel.setLayout(null);
@@ -343,28 +344,28 @@ public class vendingMachine extends JFrame {
 		button_6.setBounds(189, 263, 57, 23);
 		panel_1.add(button_6);
 		
-		JLabel text_1 = new JLabel("     \uBB3C");
-		text_1.setBounds(22, 99, 57, 15);
+		JLabel text_1 = new JLabel("\uBB3C");
+		text_1.setBounds(42, 99, 21, 15);
 		panel_1.add(text_1);
 		
-		JLabel text_2 = new JLabel("   \uCF5C\uB77C");
-		text_2.setBounds(105, 99, 57, 15);
+		JLabel text_2 = new JLabel("\uCF5C\uB77C");
+		text_2.setBounds(118, 99, 30, 15);
 		panel_1.add(text_2);
 		
-		JLabel text_3 = new JLabel("   \uC774\uC628\uC74C\uB8CC");
-		text_3.setBounds(183, 99, 74, 15);
+		JLabel text_3 = new JLabel("\uC774\uC628\uC74C\uB8CC");
+		text_3.setBounds(195, 99, 60, 15);
 		panel_1.add(text_3);
 		
-		JLabel text_4 = new JLabel("    \uCEE4\uD53C");
-		text_4.setBounds(22, 239, 57, 15);
+		JLabel text_4 = new JLabel("\uCEE4\uD53C");
+		text_4.setBounds(37, 239, 35, 15);
 		panel_1.add(text_4);
 		
-		JLabel text_5 = new JLabel(" \uC2A4\uD0C0\uBC85\uC2A4");
-		text_5.setBounds(105, 239, 57, 15);
+		JLabel text_5 = new JLabel("\uC2A4\uD0C0\uBC85\uC2A4");
+		text_5.setBounds(110, 239, 57, 15);
 		panel_1.add(text_5);
 		
-		JLabel text_6 = new JLabel("    \uB79C\uB364");
-		text_6.setBounds(191, 239, 57, 15);
+		JLabel text_6 = new JLabel("\uB79C\uB364");
+		text_6.setBounds(205, 239, 35, 15);
 		panel_1.add(text_6);
 		
 		JPanel panel_2 = new JPanel();
@@ -530,12 +531,13 @@ public class vendingMachine extends JFrame {
 					Loginframe.setVisible(true);
 					Loginframe.regBtn.addActionListener(new ActionListener() {
 						public void actionPerformed(ActionEvent e) {
-							Loginframe.field.pressRegister(Loginframe.db);
-							Admin admin = new Admin();
-							list = admin.list;
-							admin.setVisible(true);
-							adminButtonFunction(admin);
-							Loginframe.dispose(); // 해당 로그인 창을 닫는다.
+							if(Loginframe.field.pressRegister(Loginframe.db) == true) {
+								Admin admin = new Admin();
+								list = admin.list;
+								admin.setVisible(true);
+								adminButtonFunction(admin);
+								Loginframe.dispose(); // 해당 로그인 창을 닫는다.
+							}
 						}
 					});
 				}
@@ -554,6 +556,7 @@ public class vendingMachine extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				String temp = JOptionPane.showInputDialog("잔돈을 몇개로 충전 하시겠습니까?");
 				dataSend(Integer.parseInt(temp) , "fill");
+				list.add("잔돈을 "+ temp+"개로 충전하였습니다.");
 			}
 		});
 		admin.incomeBtn.addActionListener(new ActionListener() {
@@ -593,6 +596,19 @@ public class vendingMachine extends JFrame {
 								 if(Character.isDigit(tmp) == false)
 									 throw new MyException("금액을 입력해주세요");
 							 }
+								try {
+									dataOutputStream.writeUTF("order");
+									dataOutputStream.writeInt(orderIndex);
+									dataOutputStream.writeInt(orderNum * 10);
+									dataOutputStream.writeUTF(orderName);
+									dataOutputStream.writeInt(Integer.parseInt(orderPrice));
+
+									}catch(Exception err)
+									{
+										System.out.println("데이터를 보내는 중 문제 발견");
+										System.out.println(err.getMessage());
+									}
+								list.add(orderName + " 음료 " + orderNum * 10 +" 개 발주하셨습니다.");
 							 message.dispose();
 					
 						 }catch(MyException er)
@@ -603,18 +619,7 @@ public class vendingMachine extends JFrame {
 					}
 				});
 
-				try {
-					dataOutputStream.writeUTF("order");
-					dataOutputStream.writeInt(orderIndex);
-					dataOutputStream.writeInt(orderNum * 10);
-					dataOutputStream.writeUTF(orderName);
-					dataOutputStream.writeInt(Integer.parseInt(orderPrice));
 
-					}catch(Exception err)
-					{
-						System.out.println("데이터를 보내는 중 문제 발견");
-						System.out.println(err.getMessage());
-					}
 			}
 		});
 		// 수집버튼을 누를때에는 최소로 남겨놓을 잔돈을 사용자에게 입력받아 서버로 전달한다. 사용자는 남겨놓은 화폐를 제외한 금액을 서버로부터 확인 할 수 있다.

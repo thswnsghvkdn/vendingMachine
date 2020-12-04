@@ -46,7 +46,7 @@ public class Queue {
 		head = null;
 		front = null;
 		rear = null;
-		stock = 3;
+		stock = 0;
 	}
 	
 	public boolean isEmpty()
@@ -84,7 +84,7 @@ public class Queue {
 		}
 		stock--;
 	}
-	
+
 	public int getPrice()
 	{
 		return front.getPrice();
