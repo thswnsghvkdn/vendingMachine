@@ -13,6 +13,7 @@ import java.awt.Color;
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import javax.swing.JLabel;
 
 
 
@@ -32,6 +33,7 @@ public class Admin extends JFrame {
 	String userId;
 	private JPanel contentPane;
 	private JButton autoBtn;
+	public JLabel greeting;
 	
 	/**
 	 * Launch the application.
@@ -63,20 +65,10 @@ public class Admin extends JFrame {
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
 		
-		list.setBounds(32, 41, 240, 347);
+		list.setBounds(30, 66, 240, 347);
 		contentPane.add(list);
 		
 		stockBtn = new JButton("\uC7AC\uACE0 \uD655\uC778");
-		stockBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				try {
-					dataOut.writeUTF("two");
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-			}
-		});
 		stockBtn.setBounds(297, 41, 124, 41);
 		contentPane.add(stockBtn);
 		
@@ -103,6 +95,10 @@ public class Admin extends JFrame {
 		autoBtn = new JButton("Auto order : off");
 		autoBtn.setBounds(297, 414, 124, 23);
 		contentPane.add(autoBtn);
+		
+		greeting = new JLabel("greeting");
+		greeting.setBounds(30, 10, 240, 31);
+		contentPane.add(greeting);
 		
 	
 	}

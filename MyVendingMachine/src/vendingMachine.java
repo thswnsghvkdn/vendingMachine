@@ -13,14 +13,16 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.SwingConstants;
 import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
 
 
 class Beverage // 음료수 클래스
 {
-	JLabel nameText; // 음료수의 텍스트
-	JButton drinkButton; // 음료수의 버튼
+	public boolean empty = false; // 빈 재고 확인
+	public JLabel nameText; // 음료수의 텍스트
+	public JButton drinkButton; // 음료수의 버튼
 	String color;
 	Beverage( JLabel label, JButton button) // 초기에 세개 음료수를 추가하는 생성자
 	{
@@ -32,17 +34,47 @@ class Beverage // 음료수 클래스
 
 class Machine
 {
+	public boolean[] changeState = new boolean[5]; // 잔돈 재고 상태 
 
+	int won[] = {10 , 50 , 100 , 500 ,1000};
 	private String id;
-	JLabel inputScreen;
+	JLabel changeScreen; // 잔돈현황 스크린
+	JLabel inputScreen; // 삽입한 돈이 나오는 스크린
 	int tempMoney; // 사용자가 삽입한 돈
 	Beverage[] beverage = new Beverage[6];// 음료수 6개
-	Machine(JLabel screen) // 생성자 
+	Machine(JLabel screen, JLabel change) // 생성자 
 	{		
 		inputScreen = screen;
+		changeScreen = change;
 		tempMoney = 0; /// 현재 삽입된 돈을 0원으로 초기화
+		for(int i = 0 ; i < 5 ; i++)
+			changeState[i] = false;
 
 	}
+	
+	public void screenChange()
+	{
+		boolean allClear = true; // 모든 재고가 있는지 판단.
+		String str = ""; // 재고상태 문자열
+		for(int i = 0 ; i < 5; i++)
+		{
+			if(changeState[i]) // 해당인덱스의 잔돈에 재고가 없다면
+			{
+				str += won[i] + "원 ";
+				allClear = false;
+			}
+		}
+		if(allClear) // 모든 재고가 있다면
+		{
+			changeScreen.setText("    잔돈 반환");
+		}
+		else 
+		{
+			changeScreen.setText(str + "없음");
+		}
+	}
+	
+	
 	
 	void setId(String id)
 	{
@@ -52,11 +84,11 @@ class Machine
 	{
 		beverage[index] = new Beverage(label, button);
 	}
-	void changeColor(int input) // 음료수6개의 버튼 색을 알맞게 바꾼다 . 쓰레드로 구현
+	void changeColor(int input) // 음료수6개의 버튼 색을 알맞게 바꾼다 
 	{
 		for(int i =0 ; i < 6 ; i++) {
 			int t_price =  Integer.parseInt(beverage[i].drinkButton.getText());// 버튼의 텍스트를 정수로 파싱한다.
-			if(input >= t_price) // 해당 음료의 금액과 비교 
+			if(input >= t_price && beverage[i].empty == false) // 해당 음료의 금액과 비교 
 				beverage[i].drinkButton.setBackground(Color.pink);
 			else 
 				beverage[i].drinkButton.setBackground(Color.gray);
@@ -115,6 +147,15 @@ class Machine
 	
 	int getTempmoney() {return tempMoney;}
 	
+	void chageDrink(int index,String name, int price) // 음료 큐의 노드의 정보로 자판기에 표시한다.
+	{
+
+		beverage[index].nameText.setText(name);
+		beverage[index].nameText.setHorizontalAlignment(SwingConstants.CENTER); //텍스트 가운데 정렬
+		beverage[index].drinkButton.setText(Integer.toString(price));		
+	}
+	
+	
 }
 
 class MyException extends Exception{
@@ -123,7 +164,9 @@ class MyException extends Exception{
 	}
 }
 public class vendingMachine extends JFrame {
-
+	
+	private JLabel outScreen;
+	private String userID;
 	private int orderIndex; // 사용자가 음료 주문시 음료의 위치
 	private String orderName; // 사용자가 음료 주문시 주문할 음료의 이름
 	private String orderPrice; // 사용자가 음료 주문시 주문할 음료의 이름
@@ -170,7 +213,7 @@ public class vendingMachine extends JFrame {
 			}
 	}		
 	
-	
+	// 데이터를 받아오는 메소드 서버에서 보내는 문자열 스트림으로 다른 기능을 구현
 	public void dataRecv() {
 		new Thread() { // 항상 사용자의 입력을 기다리도록 while문을 스레드로 동작시킨다.
 			public void run() {
@@ -180,9 +223,22 @@ public class vendingMachine extends JFrame {
 				try {
 				while(true) 
 					{
-						strData =  dataInputStream.readUTF();  // 클라이언트의 요청 파악
+						strData =  dataInputStream.readUTF();  // 서버가 보낸 문자열 스트림  파악
 						
-						if(strData.equals("stock")) // 재고 버튼을 클릭한 경우
+						if(strData.equals("init")) // 자판기 초기화
+						{
+							for(int i = 0 ; i < 5 ; i++)
+							{
+								String name = dataInputStream.readUTF();//db에 저장되어있는 음료이름
+								int price = dataInputStream.readInt();//db에 저장되어있는 음료재고
+								int stock = dataInputStream.readInt(); //db에 저장되어있는 잔돈재고
+								myMachine.chageDrink(i, name, price);
+								if(stock == 0)
+									myMachine.changeState[i] = true; // 재고없음 표시
+							}
+							myMachine.screenChange(); // 잔돈 텍스트 필드에 상태 표시
+						}
+						else if(strData.equals("stock")) // 재고 버튼을 클릭한 경우
 						{
 							list.add("음료 재고 현황");
 							for(int i = 0 ; i < 5 ; i++)
@@ -191,7 +247,6 @@ public class vendingMachine extends JFrame {
 								str = myMachine.beverage[i].nameText.getText() + " " + numData + "개 남음";
 								list.add(str);
 							}
-
 							
 							list.add("화폐 재고 현황");
 							String won[] = {"10", "50", "100" , "500" ,"1000"};
@@ -200,10 +255,10 @@ public class vendingMachine extends JFrame {
 								numData = dataInputStream.readInt();
 								str = won[i] + "원 " + numData + "개 남음";
 								list.add(str);
-							}
-
-							
+							}							
 						}
+						
+						
 						else if(strData.equals("income")) 
 						{
 							int income = dataInputStream.readInt();
@@ -214,12 +269,48 @@ public class vendingMachine extends JFrame {
 							int income = dataInputStream.readInt();
 							list.add(income + "원 수금하셨습니다.");
 						}
+						else if(strData.equals("drinkEmpty"))
+						{
+							numData = dataInputStream.readInt();
+							myMachine.beverage[numData].empty = true;
+							myMachine.beverage[numData].nameText.setText("재고없음");
+							myMachine.beverage[numData].nameText.setHorizontalAlignment(SwingConstants.CENTER); //텍스트 가운데 정렬
+							myMachine.beverage[numData].drinkButton.setBackground(Color.gray);
+
+						}
+						else if(strData.equals("drinkChange")) // 새로운 음료로 변경
+						{
+							numData = dataInputStream.readInt();
+							String name = dataInputStream.readUTF();//db에 저장되어있는 음료이름
+							int price = dataInputStream.readInt();//db에 저장되어있는 음료재고
+							myMachine.chageDrink(numData, name, price);
+						}
 						else if(strData.equals("order")) // 음료주문 
 						{
+							int index = dataInputStream.readInt(); // 주문할 음료 위치
+							String beverageName = dataInputStream.readUTF(); // 음료 이름
+							int beveragePrice = dataInputStream.readInt(); // 음료 가격
+							
+							myMachine.beverage[index].empty = false;
+							myMachine.beverage[index].nameText.setText(beverageName);
+							myMachine.beverage[index].nameText.setHorizontalAlignment(SwingConstants.CENTER); //텍스트 가운데 정렬
+							myMachine.beverage[index].drinkButton.setText(Integer.toString(beveragePrice));
+							myMachine.beverage[index].drinkButton.setHorizontalAlignment(SwingConstants.CENTER); //텍스트 가운데 정렬
+							myMachine.changeColor(myMachine.tempMoney);
+							
 						}
 						else if(strData.equals("fill"))  // 잔돈 보충 
 						{
-							
+							for(int i = 0  ; i < 5 ; i++)
+							myMachine.changeState[i] = true;
+							myMachine.screenChange();
+							list.add("잔돈 충전을 완료했습니다.");
+						}
+						else if(strData.equals("changeEmpty"))
+						{
+							numData = dataInputStream.readInt();
+							myMachine.changeState[numData] = true;
+							myMachine.screenChange();
 						}
 	
 					}
@@ -246,7 +337,9 @@ public class vendingMachine extends JFrame {
 			public void run() {
 				try {
 					vendingMachine frame = new vendingMachine();
+					frame.dataOutputStream.writeUTF("start");
 					frame.setVisible(true);			
+					
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -258,12 +351,15 @@ public class vendingMachine extends JFrame {
 	 * Create the frame.
 	 */
 	public vendingMachine() {
+
+		
 		connect();
 		streamSetting();
 		dataRecv();
 
+		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 499, 561);
+		setBounds(100, 100, 542, 569);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
@@ -271,7 +367,7 @@ public class vendingMachine extends JFrame {
 		
 		JPanel panel = new JPanel();
 		panel.setForeground(Color.PINK);
-		panel.setBounds(27, 26, 425, 486);
+		panel.setBounds(27, 26, 487, 494);
 		contentPane.add(panel);
 		panel.setLayout(null);
 		
@@ -281,7 +377,11 @@ public class vendingMachine extends JFrame {
 		insertScreen.setBounds(310, 84, 84, 32);
 		panel.add(insertScreen);
 		
-		myMachine = new Machine(insertScreen); // Machine 객체 생성
+		outScreen = new JLabel("          \uC794\uB3C8 \uBC18\uD658");
+		outScreen.setBounds(305, 185, 182, 29);
+		panel.add(outScreen);
+		
+		myMachine = new Machine(insertScreen, outScreen); // Machine 객체 생성
 		
 		JPanel panel_1 = new JPanel();
 		panel_1.setBackground(Color.WHITE);
@@ -345,19 +445,19 @@ public class vendingMachine extends JFrame {
 		panel_1.add(button_6);
 		
 		JLabel text_1 = new JLabel("\uBB3C");
-		text_1.setBounds(42, 99, 21, 15);
+		text_1.setBounds(22, 99, 50, 15);
 		panel_1.add(text_1);
 		
 		JLabel text_2 = new JLabel("\uCF5C\uB77C");
-		text_2.setBounds(118, 99, 30, 15);
+		text_2.setBounds(105, 99, 57, 15);
 		panel_1.add(text_2);
 		
 		JLabel text_3 = new JLabel("\uC774\uC628\uC74C\uB8CC");
-		text_3.setBounds(195, 99, 60, 15);
+		text_3.setBounds(191, 99, 50, 15);
 		panel_1.add(text_3);
 		
 		JLabel text_4 = new JLabel("\uCEE4\uD53C");
-		text_4.setBounds(37, 239, 35, 15);
+		text_4.setBounds(22, 239, 50, 15);
 		panel_1.add(text_4);
 		
 		JLabel text_5 = new JLabel("\uC2A4\uD0C0\uBC85\uC2A4");
@@ -365,7 +465,8 @@ public class vendingMachine extends JFrame {
 		panel_1.add(text_5);
 		
 		JLabel text_6 = new JLabel("\uB79C\uB364");
-		text_6.setBounds(205, 239, 35, 15);
+		text_6.setHorizontalAlignment(SwingConstants.CENTER); //텍스트 가운데 정렬
+		text_6.setBounds(191, 239, 49, 15);
 		panel_1.add(text_6);
 		
 		JPanel panel_2 = new JPanel();
@@ -401,10 +502,7 @@ public class vendingMachine extends JFrame {
 		button_1000.setBounds(273, 437, 60, 32);
 		panel.add(button_1000);
 		
-		JLabel outScreen = new JLabel("    \uC794\uB3C8 \uBC18\uD658");
-		outScreen.setBounds(310, 185, 84, 29);
-		panel.add(outScreen);
-		
+
 		
 		// 자판기에 초기 아이템 등록
 		myMachine.newItem(0, text_1, button_1);
@@ -413,9 +511,9 @@ public class vendingMachine extends JFrame {
 		myMachine.newItem(3, text_4, button_4);
 		myMachine.newItem(4, text_5, button_5);
 		myMachine.newItem(5, text_6, button_6);
-		
+
 		JButton button_change = new JButton("\uC794\uB3C8");
-		button_change.setBounds(305, 223, 97, 23);
+		button_change.setBounds(305, 223, 76, 23);
 		panel.add(button_change);
 		
 		myMachine.changeColor(0);
@@ -424,6 +522,8 @@ public class vendingMachine extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				// myMachine.pressMoney(0); // 10원 버튼의 인덱스 인수로 전달
 				dataSend(0 , "input");
+				myMachine.changeState[0] = false;
+				myMachine.screenChange();
 				myMachine.pressMoney(0);
 			}
 		});
@@ -432,6 +532,8 @@ public class vendingMachine extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				// 50원 버튼의 인덱스 인수로 전달
 				dataSend(1 , "input");
+				myMachine.changeState[1] = false;
+				myMachine.screenChange();
 				myMachine.pressMoney(1);
 			}
 		});
@@ -440,6 +542,8 @@ public class vendingMachine extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				//myMachine.pressMoney(2); // 100원 버튼의 인덱스 인수로 전달
 				dataSend(2 , "input");
+				myMachine.changeState[2] = false;
+				myMachine.screenChange();
 				myMachine.pressMoney(2);
 			}
 		});
@@ -448,6 +552,8 @@ public class vendingMachine extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				//myMachine.pressMoney(3); // 500원 버튼의 인덱스 인수로 전달
 				dataSend(3 , "input");
+				myMachine.changeState[3] = false;
+				myMachine.screenChange();
 				myMachine.pressMoney(3);
 			}
 		});
@@ -456,12 +562,15 @@ public class vendingMachine extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				//myMachine.pressMoney(4); // 1000원 버튼의 인덱스 인수로 전달
 				dataSend(4 , "input");
+				myMachine.changeState[4] = false;
+				myMachine.screenChange();
 				myMachine.pressMoney(4);
 			}
 		});
 		button_change.addActionListener(new ActionListener() // 잔돈 반환 버튼 클릭
 		{
 			public void actionPerformed(ActionEvent e) {
+				dataSend(myMachine.tempMoney , "change");
 				myMachine.pressChange();
 			}
 		});
@@ -487,7 +596,8 @@ public class vendingMachine extends JFrame {
 					        }
 					      });
 					    timer2.setRepeats(false);
-					     timer2.start();								    }
+					     timer2.start();								    
+					     }
 			}
 		});
 		button_2.addActionListener(new ActionListener() // 2번 음료수 버튼 클릭
@@ -529,10 +639,38 @@ public class vendingMachine extends JFrame {
 				{
 					login Loginframe = new login();
 					Loginframe.setVisible(true);
+					Loginframe.lgnBtn.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent e) {
+							
+							String id = Loginframe.field.getID();
+							String pw = Loginframe.field.getPW();
+							if(Loginframe.db.login(id, pw))
+							{
+								userID = id;
+								String nick = Loginframe.db.getNick(userID);
+								Admin admin = new Admin();
+								list = admin.list;
+								admin.greeting.setText(nick + "님 환영합니다.");
+								admin.greeting.setHorizontalAlignment(SwingConstants.CENTER); //텍스트 가운데 정렬
+								admin.setVisible(true);
+								adminButtonFunction(admin);
+								Loginframe.dispose(); // 해당 로그인 창을 닫는다.
+									
+							}
+							
+						}
+					});
+					
+					
 					Loginframe.regBtn.addActionListener(new ActionListener() {
 						public void actionPerformed(ActionEvent e) {
 							if(Loginframe.field.pressRegister(Loginframe.db) == true) {
+								userID = Loginframe.field.getID();
+								String nick = Loginframe.db.getNick(userID);
 								Admin admin = new Admin();
+								admin.greeting.setText(nick + "님 환영합니다.");
+								admin.greeting.setHorizontalAlignment(SwingConstants.CENTER); //텍스트 가운데 정렬
+
 								list = admin.list;
 								admin.setVisible(true);
 								adminButtonFunction(admin);

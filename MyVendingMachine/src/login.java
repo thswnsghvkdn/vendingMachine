@@ -83,6 +83,14 @@ class loginField {
 		Shift = false;
 	}
 	
+	public String getID()
+	{
+		return idStack.retString();
+	}
+	public String getPW()
+	{
+		return pwStack.retString();
+	}
 	public void registBtn(JButton btn, int index, char ch)
 	{
 		button[index] = new Keyboard(btn,ch);
@@ -150,10 +158,20 @@ class loginField {
 	{
 		String id = idStack.retString();
 		String tempPw = pwStack.retString();
-		if(tempPw.matches(".*[0-9|!-%].*") && tempPw.length() > 5)
+		if(tempPw.matches(".*[0-9|!-%].*") && tempPw.length() > 5 )
 		{
-			if(db.regist(id, tempPw))
-				return true; // 데이터베이스에 아이디를 등록한다.
+			if(db.getNick(id).equals("-1"))
+			{
+				String nick = JOptionPane.showInputDialog("닉네임을 작성해주세요!");
+				if(db.regist(id, tempPw, nick))
+					return true; // 데이터베이스에 아이디를 등록한다.	
+			}
+			else 
+			{
+				JOptionPane.showMessageDialog(null, "해당아이디는 이미 존재합니다.");
+				return false;
+			}
+			
 		}
 		else 
 		{
@@ -168,6 +186,7 @@ class loginField {
 
 public class login extends JFrame {
 	public JButton regBtn; // 등록버튼은 자판기 객체에서 관리할 것!
+	public JButton lgnBtn;
 	private JPanel contentPane;
 	public loginField field;
 	public DBconnector db = new DBconnector();
@@ -311,17 +330,14 @@ public class login extends JFrame {
 		lblPassword.setBounds(26, 107, 39, 19);
 		contentPane.add(lblPassword);
 		
-		JButton lgnBtn = new JButton("Login");
-		lgnBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				
-			}
-		});
+		lgnBtn = new JButton("Login");
+
 		lgnBtn.setBackground(Color.CYAN);
 		lgnBtn.setBounds(22, 378, 112, 23);
 		contentPane.add(lgnBtn);
 		
 		regBtn = new JButton("Register");
+
 
 		regBtn.setBackground(Color.CYAN);
 		regBtn.setBounds(189, 378, 97, 23);
