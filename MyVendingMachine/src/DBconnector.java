@@ -5,16 +5,29 @@ import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Properties;
 
+import javax.activation.CommandMap;
+import javax.activation.MailcapCommandMap;
+import javax.mail.Authenticator;
+import javax.mail.Message;
+import javax.mail.Multipart;
+import javax.mail.PasswordAuthentication;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeBodyPart;
+import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMessage.RecipientType;
+import javax.mail.internet.MimeMultipart;
 import javax.swing.JOptionPane;
 
 
 
 public class DBconnector {
+	
 	SimpleDateFormat format2 = new SimpleDateFormat ( "yyyy년 MM월dd일 HH시mm분ss초");
-
 	Calendar cal = Calendar.getInstance();
-
 	 public int index;
 	 public int stock;
 	 public String name;
@@ -40,6 +53,55 @@ public class DBconnector {
 		 }
 	 }
 
+	 
+
+	 
+	 
+	  public static void naverMailSend() { 
+		  String host = "smtp.naver.com"; // 네이버일 경우 네이버 계정, gmail경우 gmail 계정 
+		  String user = new loginInfo().naverId; // 발신인 아이디 
+		  String password = new loginInfo().naverPw; // 발신인 비밀번호      
+		  // SMTP 서버 정보를 설정한다. 
+		  Properties props = new Properties(); 
+		  props.put("mail.smtp.host", host); 
+		  props.put("mail.smtp.port", 587); 
+		  props.put("mail.smtp.auth", "true"); 
+		  
+		  Session session = Session.getDefaultInstance(props, new javax.mail.Authenticator() 
+		  {
+			  protected PasswordAuthentication getPasswordAuthentication() {
+				  return new PasswordAuthentication(user, password); 
+				  } 
+			  }); 
+		  
+		  try { 
+			  MimeMessage message = new MimeMessage(session); 
+			  message.setFrom(new InternetAddress(user));
+			  message.addRecipient(Message.RecipientType.TO, new InternetAddress("ths3630802@naver.com")); 
+			  
+			  // 메일 제목
+			  message.setSubject("KTKO SMTP TEST1111"); 
+			  
+			  
+			  // 메일 내용
+			  message.setText("KTKO Success!!"); 
+			  
+			  // send the message
+			  Transport.send(message);
+			  System.out.println("Success Message Send"); 
+			  } catch (Exception e) { 
+				  e.printStackTrace(); 
+				  System.out.println("메일 오류"); 
+				 }
+		 }
+	 
+
+
+
+	 public void mail()
+	 {
+		 naverMailSend();
+	 }
 	public void checkStock() // 재고확인
 	{
 		
@@ -325,7 +387,7 @@ public class DBconnector {
 		}
 		return;
 	}
-	public int getIncome()
+	public int getCurrentIncome()
 	{
 		int year = cal.get(Calendar.YEAR);
 		int month = cal.get(Calendar.MONTH);

@@ -36,6 +36,7 @@ class Machine
 {
 	public boolean[] changeState = new boolean[5]; // 잔돈 재고 상태 
 
+	int dollarLimit = 0; // 천원 상한선
 	int won[] = {10 , 50 , 100 , 500 ,1000};
 	private String id;
 	JLabel changeScreen; // 잔돈현황 스크린
@@ -97,6 +98,10 @@ class Machine
 	
 	void pressMoney(int index) // 사용자가 화폐버튼을 누를경우
 	{
+		if(tempMoney >= 5000) // 투입금액 상한선.
+			return;
+		if(index == 4 && dollarLimit >= 3) // 천원이 들어왔을 때 천원 한계가 넘을경우 종료
+			return;
 		// 사용자가 최대금액 이상 입력하지 않도록 try catch로 처리
 		switch(index)
 		{
@@ -114,6 +119,7 @@ class Machine
 			break;
 		case 4 : // 1000원
 			tempMoney += 1000;
+			dollarLimit++;
 			break;
 		}
 		inputScreen.setText(Integer.toString(tempMoney)); // 투입 스크린 금액 갱신
@@ -121,6 +127,8 @@ class Machine
 	}
 	void pressChange() // 잔돈 반환버튼  
 	{
+		// 천원 한도와 투입금액 0으로 초기화
+		dollarLimit = 0;
 		tempMoney = 0;
 		inputScreen.setText(Integer.toString(tempMoney)); // 투입 스크린 금액 갱신
 		changeColor(tempMoney); // 버튼 색상 갱신		
@@ -164,7 +172,12 @@ class MyException extends Exception{
 	}
 }
 public class vendingMachine extends JFrame {
-	
+	JLabel outlet;
+	JLabel Image1;
+	JLabel Image2;
+	JLabel Image3;
+	JLabel Image4;
+	JLabel Image5;
 	private JLabel outScreen;
 	private String userID;
 	private int orderIndex; // 사용자가 음료 주문시 음료의 위치
@@ -238,13 +251,45 @@ public class vendingMachine extends JFrame {
 							}
 							myMachine.screenChange(); // 잔돈 텍스트 필드에 상태 표시
 						}
+						
+						else if(strData.equals("random")) // 랜덤 음료수를 뽑은 경우
+						{
+							// 음료인덱스에 따른 배출구 아이콘 생성
+							int num = dataInputStream.readInt();
+							switch(num)
+							{
+								case 0:
+									outlet.setIcon(Image1.getIcon());
+									break;
+								case 1:
+									outlet.setIcon(Image2.getIcon());
+									break;
+								case 2:
+									outlet.setIcon(Image3.getIcon());
+									break;
+								case 3:
+									outlet.setIcon(Image4.getIcon());
+									break;
+								case 4:
+									outlet.setIcon(Image5.getIcon());
+									break;
+							}
+							 Timer timer = new Timer(1250, new ActionListener() {
+							      @Override
+							        public void actionPerformed(ActionEvent e) {
+										outlet.setIcon(null);
+							        }
+							      });
+							    timer.setRepeats(false);
+							     timer.start();
+						}
 						else if(strData.equals("stock")) // 재고 버튼을 클릭한 경우
 						{
 							list.add("음료 재고 현황");
 							for(int i = 0 ; i < 5 ; i++)
 							{
 								numData = dataInputStream.readInt();
-								str = myMachine.beverage[i].nameText.getText() + " " + numData + "개 남음";
+								str = myMachine.beverage[i].nameText.getText() + "칸에 현재 음료" + numData + "개 남음";
 								list.add(str);
 							}
 							
@@ -389,27 +434,28 @@ public class vendingMachine extends JFrame {
 		panel.add(panel_1);
 		panel_1.setLayout(null);
 		
-		JLabel Image1 = new JLabel("");
+		Image1 = new JLabel("");
 		Image1.setIcon(new ImageIcon("C:\\Users\\xxeun\\Documents\\vendingMachine\\MyVendingMachine\\src\\Image\\water.png"));
 		Image1.setBounds(22, 20, 57, 58);
 		panel_1.add(Image1);
+	
 		
-		JLabel Image2 = new JLabel("");
+		Image2 = new JLabel("");
 		Image2.setIcon(new ImageIcon("C:\\Users\\xxeun\\Documents\\vendingMachine\\MyVendingMachine\\src\\Image\\soda.png"));
 		Image2.setBounds(105, 20, 57, 58);
 		panel_1.add(Image2);
 		
-		JLabel Image3 = new JLabel("");
+		Image3 = new JLabel("");
 		Image3.setIcon(new ImageIcon("C:\\Users\\xxeun\\Documents\\vendingMachine\\MyVendingMachine\\src\\Image\\energy.png"));
 		Image3.setBounds(191, 20, 57, 58);
 		panel_1.add(Image3);
 		
-		JLabel Image4 = new JLabel("");
+		Image4 = new JLabel("");
 		Image4.setIcon(new ImageIcon("C:\\Users\\xxeun\\Documents\\vendingMachine\\MyVendingMachine\\src\\Image\\coffee.png"));
 		Image4.setBounds(22, 171, 57, 58);
 		panel_1.add(Image4);
 		
-		JLabel Image5 = new JLabel("");
+		Image5 = new JLabel("");
 		Image5.setIcon(new ImageIcon("C:\\Users\\xxeun\\Documents\\vendingMachine\\MyVendingMachine\\src\\Image\\starbucks.png"));
 		Image5.setBounds(108, 171, 57, 58);
 		panel_1.add(Image5);
@@ -475,7 +521,7 @@ public class vendingMachine extends JFrame {
 		panel.add(panel_2);
 		panel_2.setLayout(null);
 		
-		JLabel outlet = new JLabel("");
+		outlet = new JLabel("");
 		outlet.setBounds(40, 5, 69, 78);
 		panel_2.add(outlet);
 		
@@ -581,10 +627,11 @@ public class vendingMachine extends JFrame {
 				if(myMachine.pressDrink(0) == 1) {
 				 dataSend(0 , "drink"); // 서버에 인덱스를 보낸다.
 					
+				 // 타이머를 이용하여 배출구에 음료표시
 				 Timer timer = new Timer(50, new ActionListener() {
 				      @Override
 				        public void actionPerformed(ActionEvent e) {
-							outlet.setIcon(new ImageIcon("C:\\Users\\xxeun\\Documents\\vendingMachine\\MyVendingMachine\\src\\Image\\10\uC6D0.PNG"));
+							outlet.setIcon(new ImageIcon("C:\\\\Users\\\\xxeun\\\\Documents\\\\vendingMachine\\\\MyVendingMachine\\\\src\\\\Image\\\\water.png"));
 				        }
 				      });
 				    timer.setRepeats(false);
@@ -605,7 +652,15 @@ public class vendingMachine extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				if(myMachine.pressDrink(1) == 1)
 				 dataSend(1 , "drink"); // 서버에 인덱스를 보낸다.
-				outlet.setIcon(null);
+				outlet.setIcon(new ImageIcon("C:\\Users\\xxeun\\Documents\\vendingMachine\\MyVendingMachine\\src\\Image\\soda.png"));
+				 Timer timer = new Timer(1250, new ActionListener() {
+				      @Override
+				        public void actionPerformed(ActionEvent e) {
+							outlet.setIcon(null);
+				        }
+				      });
+				    timer.setRepeats(false);
+				     timer.start();
 
 			}
 		});
@@ -614,6 +669,15 @@ public class vendingMachine extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				if(myMachine.pressDrink(2) == 1)
 				 dataSend(2 , "drink"); // 서버에 인덱스를 보낸다.
+				outlet.setIcon(new ImageIcon("C:\\Users\\xxeun\\Documents\\vendingMachine\\MyVendingMachine\\src\\Image\\energy.png"));
+				 Timer timer = new Timer(1250, new ActionListener() {
+				      @Override
+				        public void actionPerformed(ActionEvent e) {
+							outlet.setIcon(null);
+				        }
+				      });
+				    timer.setRepeats(false);
+				     timer.start();
 			}
 		});
 		button_4.addActionListener(new ActionListener() // 4번 음료수 버튼 클릭
@@ -621,6 +685,15 @@ public class vendingMachine extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				if(myMachine.pressDrink(3) == 1)
 				 dataSend(3 , "drink"); // 서버에 인덱스를 보낸다.
+				outlet.setIcon(new ImageIcon("C:\\Users\\xxeun\\Documents\\vendingMachine\\MyVendingMachine\\src\\Image\\coffee.png"));
+				 Timer timer = new Timer(1250, new ActionListener() {
+				      @Override
+				        public void actionPerformed(ActionEvent e) {
+							outlet.setIcon(null);
+				        }
+				      });
+				    timer.setRepeats(false);
+				     timer.start();
 			}
 		});
 		button_5.addActionListener(new ActionListener() // 5번 음료수 버튼 클릭
@@ -628,6 +701,15 @@ public class vendingMachine extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				if(myMachine.pressDrink(4) == 1) // 매출
 				 dataSend(4 , "drink"); // 서버에 인덱스를 보낸다.
+				outlet.setIcon(new ImageIcon("C:\\Users\\xxeun\\Documents\\vendingMachine\\MyVendingMachine\\src\\Image\\starbucks.png"));
+				 Timer timer = new Timer(1250, new ActionListener() {
+				      @Override
+				        public void actionPerformed(ActionEvent e) {
+							outlet.setIcon(null);
+				        }
+				      });
+				    timer.setRepeats(false);
+				     timer.start();
 			}
 		});
 		button_6.addActionListener(new ActionListener() // 6번 음료수 버튼 클릭
@@ -638,6 +720,11 @@ public class vendingMachine extends JFrame {
 				else if(myMachine.pressDrink(5) == -1)
 				{
 					login Loginframe = new login();
+					
+					Loginframe.lgnBtn = new JButton("Login"); // 로그인 버튼 등록
+					Loginframe.lgnBtn.setBackground(Color.CYAN);
+					Loginframe.lgnBtn.setBounds(22, 378, 112, 23);
+					Loginframe.add(Loginframe.lgnBtn);
 					Loginframe.setVisible(true);
 					Loginframe.lgnBtn.addActionListener(new ActionListener() {
 						public void actionPerformed(ActionEvent e) {
@@ -707,6 +794,11 @@ public class vendingMachine extends JFrame {
 				 dataSend(1 , "stock");
 			}
 		});
+		admin.autoBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				 dataSend(1 , "mail");
+			}
+		});
 
 		admin.orderBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -765,6 +857,32 @@ public class vendingMachine extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				String temp = JOptionPane.showInputDialog("잔돈을 몇개 남겨 놓으시겠습니까?");
 				dataSend(Integer.parseInt(temp) , "collect");
+			}
+		});
+		
+		// 비밀번호 변경 구현
+		admin.changeBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				
+				login Loginframe = new login();
+				Loginframe.setVisible(true);
+
+				// 비밀번호 변경 버튼 생성
+				Loginframe.regBtn.setText("변경");
+				Loginframe.regBtn.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						// 입력한 아이디와 사용자 아이디가 같다면
+						if(userID.equals(Loginframe.field.getID())) 
+						{
+							// db에서 비밀번호 변경
+							Loginframe.db.changePw(userID, Loginframe.field.getPW());
+							JOptionPane.showMessageDialog(null,"변경 완료!");
+							Loginframe.dispose(); // 해당 로그인 창을 닫는다.
+						}
+						else
+							JOptionPane.showMessageDialog(null,"입력한 아이디가 사용자아이디와 다릅니다.");
+					}
+				});
 			}
 		});
 	}

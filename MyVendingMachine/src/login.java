@@ -330,11 +330,7 @@ public class login extends JFrame {
 		lblPassword.setBounds(26, 107, 39, 19);
 		contentPane.add(lblPassword);
 		
-		lgnBtn = new JButton("Login");
 
-		lgnBtn.setBackground(Color.CYAN);
-		lgnBtn.setBounds(22, 378, 112, 23);
-		contentPane.add(lgnBtn);
 		
 		regBtn = new JButton("Register");
 

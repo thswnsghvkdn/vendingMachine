@@ -293,12 +293,19 @@ public class Manager extends JFrame {
 									index++; // 다음 화폐
 								}
 							}
+							else if(strData.equals("mail"))
+							{
+								numData = inputStream.readInt();
+								db.naverMailSend();
+							}
 							else if(strData.equals("drink")) // 사용자가 음료버튼을 클릭한경우
 							{  
 								numData = inputStream.readInt();
 								if(numData == 5) // 랜덤 음료 부분
 								{
 									numData = heap.delete(); // 가장 많이 남은 음료의 인덱스
+									outputStream.writeUTF("random");
+									outputStream.writeInt(numData);
 								}
 								
 								
