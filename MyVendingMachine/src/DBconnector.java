@@ -57,7 +57,7 @@ public class DBconnector {
 
 	 
 	 
-	  public static void naverMailSend() { 
+	  public static void naverMailSend(String drink) { 
 		  String host = "smtp.naver.com"; // 네이버일 경우 네이버 계정, gmail경우 gmail 계정 
 		  String user = new loginInfo().naverId; // 발신인 아이디 
 		  String password = new loginInfo().naverPw; // 발신인 비밀번호      
@@ -80,11 +80,11 @@ public class DBconnector {
 			  message.addRecipient(Message.RecipientType.TO, new InternetAddress("ths3630802@naver.com")); 
 			  
 			  // 메일 제목
-			  message.setSubject("KTKO SMTP TEST1111"); 
+			  message.setSubject("재고알림"); 
 			  
-			  
+			  String text = drink + "재고가 현재 0개 입니다 추가 발주 부탁드립니다.";
 			  // 메일 내용
-			  message.setText("KTKO Success!!"); 
+			  message.setText(text); 
 			  
 			  // send the message
 			  Transport.send(message);
@@ -98,9 +98,9 @@ public class DBconnector {
 
 
 
-	 public void mail()
+	 public void mail(String str)
 	 {
-		 naverMailSend();
+		 naverMailSend(str);
 	 }
 	public void checkStock() // 재고확인
 	{
@@ -161,6 +161,24 @@ public class DBconnector {
 	public String getName(int index) // 해당 인덱스 음료 이름 가져오기
 	{
 		int pri = getFirstPriority(index);
+		String search = "select * from stock where dIndex = " + index +" && dPriority = "+ pri +" order by dPriority"; // 해당 인덱스 음료를 불러온다
+			
+		try {
+			rs = st.executeQuery(search);
+			while(rs.next()) { // 0인 재고 스킵하기
+				if(rs.getInt(5) != 0)
+					return rs.getString(3);
+			}
+			return "재고없음"; // 재고 전부가 없을 때
+		}catch(Exception e) {
+			System.out.println("데이터 전송 오류");
+
+		}
+		return "";
+	}
+	public String getLastName(int index) // 해당 인덱스의 마지막 음료 이름 가져오기
+	{
+		int pri = getLastPriority(index);
 		String search = "select * from stock where dIndex = " + index +" && dPriority = "+ pri +" order by dPriority"; // 해당 인덱스 음료를 불러온다
 			
 		try {
@@ -263,6 +281,7 @@ public class DBconnector {
 		}
 		return -1;
 	}
+
 	public void deleteZero() // 재고가 0인 음료 DB에서 제거
 	{
 		try {
@@ -343,12 +362,13 @@ public class DBconnector {
 	}
 	public boolean changePw(String id, String pw) // 비밀번호 변경
 	{
-		String search = "select * from member where " + id + ";"; // 해당 아이디가 있는지 검사한다.
+		String search = "select * from member where userID = '" + id + "'"; // 해당 아이디가 있는지 검사한다.
 		try {
 			rs = st.executeQuery(search);
 			if(rs.next())  // 해당 아이디가 있는 경우 
 			{
-				String str = "update member set userPW = " + pw + " where userID = " + id;
+				String str = "update member set userPW = '" + pw + "' where userID = '" + id + "'";
+				st.executeUpdate(str);
 				return true;
 			}
 			else
@@ -362,7 +382,7 @@ public class DBconnector {
 	public void inputIncome(int income) // 수입을 db에 추가해 나간다.
 	{
 		int year = cal.get(Calendar.YEAR);
-		int month = cal.get(Calendar.MONTH);
+		int month = cal.get(Calendar.MONTH) + 1;
 		int day = cal.get(Calendar.DAY_OF_MONTH);
 		
 		String search = "select * from income where year = " + year +" && month = "+ month + " && day = " + day ; // 해당 인덱스 음료를 불러온다
@@ -387,12 +407,12 @@ public class DBconnector {
 		}
 		return;
 	}
-	public int getCurrentIncome()
+	public int getCurrentIncome() // 오늘 수입
 	{
 		int year = cal.get(Calendar.YEAR);
-		int month = cal.get(Calendar.MONTH);
+		int month = cal.get(Calendar.MONTH) + 1;
 		int day = cal.get(Calendar.DAY_OF_MONTH);
-		String search = "select * from income where year = " + year +" && month = "+ month + " && day = " + day ; // 해당 인덱스 음료를 불러온다
+		String search = "select * from income where year = " + year +" && month = "+ month + " && day = " + day ; // 해당 인덱스 수입을 불러온다
 		try {
 			rs = st.executeQuery(search);
 			// 해당 날짜에 데이터가 있으면 반환.
@@ -400,10 +420,28 @@ public class DBconnector {
 				return rs.getInt(4);
 			}
 			// 날짜에 데이터가 없으면 -1 반환
-			return -1;
+			return 0;
 		}catch(Exception e) {
 			System.out.println("데이터 전송 오류");
 
+		}
+		return 0;
+	}
+	
+	public int getMonthIncome(int month) // 오늘 수입
+	{
+		int year = cal.get(Calendar.YEAR);
+		String search = "select * from income where year = " + year +" && month = "+ month; // 해당 인덱스 수입을 불러온다
+		try {
+			rs = st.executeQuery(search);
+			int sum = 0;
+			// 해당 날짜에 데이터가 있으면 반복.
+			while(rs.next()) { 
+				sum += rs.getInt(4); // 한달 수입을 더한다.
+			}
+			 return sum;
+		}catch(Exception e) {
+			System.out.println("데이터 전송 오류");
 		}
 		return -1;
 	}

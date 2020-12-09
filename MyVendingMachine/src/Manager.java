@@ -243,11 +243,18 @@ public class Manager extends JFrame {
 									}
 								
 							}
-							else if(strData.equals("input")) // 사용자가 화폐를 투입한경우
+							else if(strData.equals("input")) // 사용자가 화폐를 투입한경우, 해당화폐의 투입시에는 화폐의 재고가 생긴 정보를 클라이언트에게 보낸다.
 							{
 								numData = inputStream.readInt();
-								manageMachine.inputMoney(numData);
-								db.incStock(numData + 5); 
+								manageMachine.inputMoney(numData); // 현재 manageMachine 객체에 잔돈 멤버의 값을 증가한다.
+								db.incStock(numData + 5); // 데이터 베이스의 해당 동전의 재고를 추가한다. 
+								
+								Iterator<Client> iterator = connections.iterator();
+								while(iterator.hasNext()) { // 클라이언트 전부에게 보낸다.
+										Client client = iterator.next();
+										client.outputStream.writeUTF("input");
+										client.outputStream.writeInt(numData);
+								} 
 								list.add("사용자 동전투입");
 							}
 							
@@ -293,21 +300,22 @@ public class Manager extends JFrame {
 									index++; // 다음 화폐
 								}
 							}
-							else if(strData.equals("mail"))
-							{
-								numData = inputStream.readInt();
-								db.naverMailSend();
-							}
+	
 							else if(strData.equals("drink")) // 사용자가 음료버튼을 클릭한경우
 							{  
 								numData = inputStream.readInt();
+								int income; // 해당 음료 인덱스의 가격
+								String name; // 해당 음료 인덱스의 이름
 								if(numData == 5) // 랜덤 음료 부분
 								{
 									numData = heap.delete(); // 가장 많이 남은 음료의 인덱스
 									outputStream.writeUTF("random");
 									outputStream.writeInt(numData);
+									income = 700; // 랜덤을 누른경우에 수입
 								}
-								
+								else
+							      income = db.getPrice(numData); // 일반 음료를 누른경우의 수입
+								name = db.getName(numData); // 재고를 줄이기 전에 이름을 받아온다.
 								
 								if(manageMachine.beverage[numData].getStock() > 0) {
 									String text = manageMachine.beverage[numData].queue.getName();
@@ -316,18 +324,19 @@ public class Manager extends JFrame {
 									String message;
 									message = "사용자가 " + text + "을 사갔습니다." ;
 									list.add(message);
-									boolean isEmpty = db.reduceStock(numData); // db에 제고 업데이트
+									boolean isEmpty = db.reduceStock(numData); // db에 재고 업데이트
 									if(isEmpty) {
-										db.updateEmptyDate(numData);
-										if(db.getAllStock(numData) == 0)
+										db.updateEmptyDate(numData); // 재고가 나간 날짜 저장
+										if(db.getAllStock(numData) == 0) 	// 해당 인덱스의 모든 음료가 다 나갔다면
 										{
-											// 해당 인덱스의 모든 음료가 다 나갔다면
 											Iterator<Client> iterator = connections.iterator();
 											while(iterator.hasNext()) { // 클라이언트 전부에게 보낸다.
 													Client client = iterator.next();
 													client.outputStream.writeUTF("drinkEmpty");
-													client.outputStream.writeInt(numData);
+													client.outputStream.writeInt(numData);												
 											} 
+					
+											db.mail( name ); // 현재 음료의 마지막 음료이름으로 재고 없음을 알리는 메일을 보낸다.
 										}
 										else {
 											// 해당 음료의  새로운 이름과 가격을 모든 클라이언트 자판기에  알린다.
@@ -341,8 +350,8 @@ public class Manager extends JFrame {
 													client.outputStream.writeInt(db.getPrice(numData));
 											} 
 										}
-										
 									}
+									db.inputIncome(income); // 하루 매출 저장
 									heap.insert(numData, manageMachine.beverage[numData].getStock()); // 줄어든 사이즈로 힙 트리를 업데이트
 								}
 							}
@@ -359,11 +368,17 @@ public class Manager extends JFrame {
 									outputStream.writeInt(manageMachine.change[i]);
 								}
 							}
-							else if(strData.equals("income")) // 매출 현황
+							else if(strData.equals("income")) //하루 매출 현황
 							{
 								inputStream.readInt();
 								outputStream.writeUTF("income");
-								outputStream.writeInt(manageMachine.income);
+								outputStream.writeInt(db.getCurrentIncome()); // 데이터 베이스에서 하루 매출을 불러온다.
+							}
+							else if(strData.equals("monthIncome"))
+							{
+								int month = inputStream.readInt(); // 클라이언트가 요청한 월 
+								outputStream.writeUTF("monthIncome");
+								outputStream.writeInt(db.getMonthIncome(month)); // 데이터 베이스에서 월별 매출을 불러온다.								
 							}
 							else if(strData.equals("collect")) // 수금 사용자에게 받은 최소 개수만큼을 제외한 나머지 화폐를 반환한다.
 							{
@@ -381,26 +396,28 @@ public class Manager extends JFrame {
 								}
 								list.add("클라이언트 " + id + " : " +sum + "원 수금하셨습니다.");
 							}
-							else if(strData.equals("order")) // 음료 주문
+							else if(strData.equals("order")) // 음료 발주
 							{
 								
 								int index = inputStream.readInt(); // 주문할 음료 위치
 								int orderNum  = inputStream.readInt(); // 주문할 음료 수
 								String beverageName = inputStream.readUTF(); // 음료 이름
 								int beveragePrice = inputStream.readInt(); // 음료 가격
-								int currentStock = db.getStock(index); // 주문한 음료의 현재 재고 상태
+								int stock = db.getStock(index);
+
+								
 								manageMachine.orderDrink(index, beverageName, beveragePrice, orderNum);
 								list.add("클라이언트 "+ id + "에서 " + beverageName + "음료" + orderNum + "개 발주, 가격 : " + beveragePrice);
 								heap.insert(index, manageMachine.beverage[index].getStock()); // 발주된 재고 기준으로 힙트리를 업데이트
 								db.insertDrink(index, beverageName, beveragePrice, orderNum); // DB업데이트
 								
-								if(currentStock == 0) // 현재재고가 0이 였다면 
+								if(stock == 0) // 현재재고가 0이 였다면 
 								{
 									// 사용자에게 새로운 음료의 정보를 보낸다.
 									Iterator<Client> iterator = connections.iterator();
 									while(iterator.hasNext()) { // 클라이언트 전부에게 보낸다.
 											Client client = iterator.next();
-											outputStream.writeUTF("order");
+											client.outputStream.writeUTF("order");
 											client.outputStream.writeInt(index);
 											client.outputStream.writeUTF(beverageName);
 											client.outputStream.writeInt(beveragePrice);
@@ -431,7 +448,12 @@ public class Manager extends JFrame {
 									sum = index * won[i]; 
 									list.add(won[i] + "원 " +index + "개 보충, 총" + sum + "원 보충하였습니다.");
 								}
-								outputStream.writeUTF("fill");
+								Iterator<Client> iterator = connections.iterator();
+								while(iterator.hasNext()) { // 클라이언트 전부에게 보낸다.
+										Client client = iterator.next();
+										client.outputStream.writeUTF("fill");
+
+								} 
 							}
 						}
 					}

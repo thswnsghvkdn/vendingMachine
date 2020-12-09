@@ -1,6 +1,9 @@
 import java.awt.Color; // 특수문자 검사용 라이브러리
 import java.awt.EventQueue;
+import java.awt.Image;
 import java.awt.List;
+import java.awt.MediaTracker;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.DataInputStream;
@@ -96,12 +99,12 @@ class Machine
 		}
 	}
 	
-	void pressMoney(int index) // 사용자가 화폐버튼을 누를경우
+	boolean pressMoney(int index) // 사용자가 화폐버튼을 누를경우
 	{
 		if(tempMoney >= 5000) // 투입금액 상한선.
-			return;
+			return false;
 		if(index == 4 && dollarLimit >= 3) // 천원이 들어왔을 때 천원 한계가 넘을경우 종료
-			return;
+			return false;
 		// 사용자가 최대금액 이상 입력하지 않도록 try catch로 처리
 		switch(index)
 		{
@@ -124,6 +127,7 @@ class Machine
 		}
 		inputScreen.setText(Integer.toString(tempMoney)); // 투입 스크린 금액 갱신
 		changeColor(tempMoney); // 버튼 색상 갱신
+		return true;
 	}
 	void pressChange() // 잔돈 반환버튼  
 	{
@@ -283,10 +287,17 @@ public class vendingMachine extends JFrame {
 							    timer.setRepeats(false);
 							     timer.start();
 						}
+						else if(strData.equals("input")) // 화폐의 재고를 확인하는 조건
+						{
+							numData = dataInputStream.readInt(); // 들어온 화폐 인덱스
+							myMachine.changeState[numData] = false; // 재고 flag 설정
+							myMachine.screenChange(); // 재고표시
+						}
 						else if(strData.equals("stock")) // 재고 버튼을 클릭한 경우
 						{
 							list.add("음료 재고 현황");
-							for(int i = 0 ; i < 5 ; i++)
+							list.add("");
+							for(int i = 0 ; i < 5 ; i++) // 음료 현황을 보여줌
 							{
 								numData = dataInputStream.readInt();
 								str = myMachine.beverage[i].nameText.getText() + "칸에 현재 음료" + numData + "개 남음";
@@ -294,8 +305,9 @@ public class vendingMachine extends JFrame {
 							}
 							
 							list.add("화폐 재고 현황");
+							list.add("");
 							String won[] = {"10", "50", "100" , "500" ,"1000"};
-							for(int i = 0 ; i < 5 ; i++)
+							for(int i = 0 ; i < 5 ; i++) // 화폐 재고 현황을 보여줌
 							{
 								numData = dataInputStream.readInt();
 								str = won[i] + "원 " + numData + "개 남음";
@@ -308,6 +320,11 @@ public class vendingMachine extends JFrame {
 						{
 							int income = dataInputStream.readInt();
 							list.add("하루 매출 현황 : " + income);
+						}
+						else if(strData.equals("monthIncome"))
+						{
+							int income = dataInputStream.readInt();
+							list.add("해당 월 매출 현황 : " + income);		
 						}
 						else if(strData.equals("collect")) 
 						{
@@ -435,33 +452,33 @@ public class vendingMachine extends JFrame {
 		panel_1.setLayout(null);
 		
 		Image1 = new JLabel("");
-		Image1.setIcon(new ImageIcon("C:\\Users\\xxeun\\Documents\\vendingMachine\\MyVendingMachine\\src\\Image\\water.png"));
+		Image1.setIcon(new ImageIcon(vendingMachine.class.getResource("/Image/water.png")));
 		Image1.setBounds(22, 20, 57, 58);
 		panel_1.add(Image1);
 	
 		
 		Image2 = new JLabel("");
-		Image2.setIcon(new ImageIcon("C:\\Users\\xxeun\\Documents\\vendingMachine\\MyVendingMachine\\src\\Image\\soda.png"));
+		Image2.setIcon(new ImageIcon(vendingMachine.class.getResource("/Image/soda.png")));
 		Image2.setBounds(105, 20, 57, 58);
 		panel_1.add(Image2);
 		
 		Image3 = new JLabel("");
-		Image3.setIcon(new ImageIcon("C:\\Users\\xxeun\\Documents\\vendingMachine\\MyVendingMachine\\src\\Image\\energy.png"));
+		Image3.setIcon(new ImageIcon(vendingMachine.class.getResource("/Image/energy.png")));
 		Image3.setBounds(191, 20, 57, 58);
 		panel_1.add(Image3);
 		
 		Image4 = new JLabel("");
-		Image4.setIcon(new ImageIcon("C:\\Users\\xxeun\\Documents\\vendingMachine\\MyVendingMachine\\src\\Image\\coffee.png"));
+		Image4.setIcon(new ImageIcon(vendingMachine.class.getResource("/Image/coffee.png")));
 		Image4.setBounds(22, 171, 57, 58);
 		panel_1.add(Image4);
 		
 		Image5 = new JLabel("");
-		Image5.setIcon(new ImageIcon("C:\\Users\\xxeun\\Documents\\vendingMachine\\MyVendingMachine\\src\\Image\\starbucks.png"));
+		Image5.setIcon(new ImageIcon(vendingMachine.class.getResource("/Image/starbucks.png")));
 		Image5.setBounds(108, 171, 57, 58);
 		panel_1.add(Image5);
 		
 		JLabel lblNewLabel_5 = new JLabel("");
-		lblNewLabel_5.setIcon(new ImageIcon("C:\\Users\\xxeun\\Documents\\vendingMachine\\MyVendingMachine\\src\\Image\\question.png"));
+		lblNewLabel_5.setIcon(new ImageIcon(vendingMachine.class.getResource("/Image/question.png")));
 		lblNewLabel_5.setBounds(193, 171, 57, 58);
 		panel_1.add(lblNewLabel_5);
 
@@ -527,25 +544,29 @@ public class vendingMachine extends JFrame {
 		
 		JButton button_10 = new JButton("");
 		button_10.setBackground(Color.WHITE);
-		button_10.setIcon(new ImageIcon("C:\\Users\\xxeun\\Documents\\vendingMachine\\MyVendingMachine\\src\\Image\\10\uC6D0.PNG"));
+		button_10.setIcon(new ImageIcon(vendingMachine.class.getResource("/Image/10\uC6D0.PNG")));
 
-		button_10.setBounds(296, 354, 32, 29);
+		button_10.setBounds(296, 376, 32, 29);
 		panel.add(button_10);
 		
-		JButton button_50 = new JButton("50");
-		button_50.setBounds(345, 354, 60, 32);
+		JButton button_50 = new JButton("");
+		button_50.setIcon(new ImageIcon(vendingMachine.class.getResource("/Image/50.PNG")));
+		button_50.setBounds(345, 376, 31, 29);
 		panel.add(button_50);
 		
-		JButton button_100 = new JButton("100");
-		button_100.setBounds(273, 396, 60, 32);
+		JButton button_100 = new JButton("");
+		button_100.setIcon(new ImageIcon(vendingMachine.class.getResource("/Image/100.PNG")));
+		button_100.setBounds(388, 376, 32, 29);
 		panel.add(button_100);
 		
-		JButton button_500 = new JButton("500");
-		button_500.setBounds(345, 396, 60, 32);
+		JButton button_500 = new JButton("");
+		button_500.setIcon(new ImageIcon(vendingMachine.class.getResource("/Image/500.PNG")));
+		button_500.setBounds(432, 376, 31, 29);
 		panel.add(button_500);
 		
-		JButton button_1000 = new JButton("1000");
-		button_1000.setBounds(273, 437, 60, 32);
+		JButton button_1000 = new JButton("");
+		button_1000.setIcon(new ImageIcon(vendingMachine.class.getResource("/Image/1000.PNG")));
+		button_1000.setBounds(296, 428, 60, 29);
 		panel.add(button_1000);
 		
 
@@ -566,51 +587,40 @@ public class vendingMachine extends JFrame {
 		button_10.addActionListener(new ActionListener()  // 10원 버튼 클릭
 		{
 			public void actionPerformed(ActionEvent e) {
-				// myMachine.pressMoney(0); // 10원 버튼의 인덱스 인수로 전달
-				dataSend(0 , "input");
-				myMachine.changeState[0] = false;
-				myMachine.screenChange();
-				myMachine.pressMoney(0);
+				if(myMachine.pressMoney(0))
+					dataSend(0 , "input");
 			}
 		});
 		button_50.addActionListener(new ActionListener() // 50원 버튼 클릭
 		{
 			public void actionPerformed(ActionEvent e) {
 				// 50원 버튼의 인덱스 인수로 전달
-				dataSend(1 , "input");
-				myMachine.changeState[1] = false;
-				myMachine.screenChange();
-				myMachine.pressMoney(1);
+				if(myMachine.pressMoney(1))
+					dataSend(1 , "input");
 			}
 		});
 		button_100.addActionListener(new ActionListener() // 100원 버튼 클릭
 		{
 			public void actionPerformed(ActionEvent e) {
 				//myMachine.pressMoney(2); // 100원 버튼의 인덱스 인수로 전달
-				dataSend(2 , "input");
-				myMachine.changeState[2] = false;
-				myMachine.screenChange();
-				myMachine.pressMoney(2);
+				if(myMachine.pressMoney(2))
+					dataSend(2 , "input");
 			}
 		});
 		button_500.addActionListener(new ActionListener() // 500원 버튼 클릭
 		{
 			public void actionPerformed(ActionEvent e) {
 				//myMachine.pressMoney(3); // 500원 버튼의 인덱스 인수로 전달
-				dataSend(3 , "input");
-				myMachine.changeState[3] = false;
-				myMachine.screenChange();
-				myMachine.pressMoney(3);
+				if(myMachine.pressMoney(3))
+					dataSend(3 , "input");
 			}
 		});
 		button_1000.addActionListener(new ActionListener() // 1000원 버튼 클릭
 		{
 			public void actionPerformed(ActionEvent e) {
 				//myMachine.pressMoney(4); // 1000원 버튼의 인덱스 인수로 전달
-				dataSend(4 , "input");
-				myMachine.changeState[4] = false;
-				myMachine.screenChange();
-				myMachine.pressMoney(4);
+				if(myMachine.pressMoney(4))
+					dataSend(4 , "input");
 			}
 		});
 		button_change.addActionListener(new ActionListener() // 잔돈 반환 버튼 클릭
@@ -631,7 +641,7 @@ public class vendingMachine extends JFrame {
 				 Timer timer = new Timer(50, new ActionListener() {
 				      @Override
 				        public void actionPerformed(ActionEvent e) {
-							outlet.setIcon(new ImageIcon("C:\\\\Users\\\\xxeun\\\\Documents\\\\vendingMachine\\\\MyVendingMachine\\\\src\\\\Image\\\\water.png"));
+							outlet.setIcon(new ImageIcon(vendingMachine.class.getResource("/Image/water.png")));
 				        }
 				      });
 				    timer.setRepeats(false);
@@ -652,7 +662,7 @@ public class vendingMachine extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				if(myMachine.pressDrink(1) == 1)
 				 dataSend(1 , "drink"); // 서버에 인덱스를 보낸다.
-				outlet.setIcon(new ImageIcon("C:\\Users\\xxeun\\Documents\\vendingMachine\\MyVendingMachine\\src\\Image\\soda.png"));
+				outlet.setIcon(new ImageIcon(vendingMachine.class.getResource("/Image/soda.png")));
 				 Timer timer = new Timer(1250, new ActionListener() {
 				      @Override
 				        public void actionPerformed(ActionEvent e) {
@@ -669,7 +679,7 @@ public class vendingMachine extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				if(myMachine.pressDrink(2) == 1)
 				 dataSend(2 , "drink"); // 서버에 인덱스를 보낸다.
-				outlet.setIcon(new ImageIcon("C:\\Users\\xxeun\\Documents\\vendingMachine\\MyVendingMachine\\src\\Image\\energy.png"));
+				outlet.setIcon(new ImageIcon(vendingMachine.class.getResource("/Image/energy.png")));
 				 Timer timer = new Timer(1250, new ActionListener() {
 				      @Override
 				        public void actionPerformed(ActionEvent e) {
@@ -685,7 +695,7 @@ public class vendingMachine extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				if(myMachine.pressDrink(3) == 1)
 				 dataSend(3 , "drink"); // 서버에 인덱스를 보낸다.
-				outlet.setIcon(new ImageIcon("C:\\Users\\xxeun\\Documents\\vendingMachine\\MyVendingMachine\\src\\Image\\coffee.png"));
+				outlet.setIcon(new ImageIcon(vendingMachine.class.getResource("/Image/coffee.png")));
 				 Timer timer = new Timer(1250, new ActionListener() {
 				      @Override
 				        public void actionPerformed(ActionEvent e) {
@@ -701,7 +711,7 @@ public class vendingMachine extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				if(myMachine.pressDrink(4) == 1) // 매출
 				 dataSend(4 , "drink"); // 서버에 인덱스를 보낸다.
-				outlet.setIcon(new ImageIcon("C:\\Users\\xxeun\\Documents\\vendingMachine\\MyVendingMachine\\src\\Image\\starbucks.png"));
+				outlet.setIcon(new ImageIcon(vendingMachine.class.getResource("/Image/starbucks.png")));
 				 Timer timer = new Timer(1250, new ActionListener() {
 				      @Override
 				        public void actionPerformed(ActionEvent e) {
@@ -724,7 +734,7 @@ public class vendingMachine extends JFrame {
 					Loginframe.lgnBtn = new JButton("Login"); // 로그인 버튼 등록
 					Loginframe.lgnBtn.setBackground(Color.CYAN);
 					Loginframe.lgnBtn.setBounds(22, 378, 112, 23);
-					Loginframe.add(Loginframe.lgnBtn);
+					Loginframe.getContentPane().add(Loginframe.lgnBtn);
 					Loginframe.setVisible(true);
 					Loginframe.lgnBtn.addActionListener(new ActionListener() {
 						public void actionPerformed(ActionEvent e) {
@@ -794,11 +804,7 @@ public class vendingMachine extends JFrame {
 				 dataSend(1 , "stock");
 			}
 		});
-		admin.autoBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				 dataSend(1 , "mail");
-			}
-		});
+
 
 		admin.orderBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -875,8 +881,11 @@ public class vendingMachine extends JFrame {
 						if(userID.equals(Loginframe.field.getID())) 
 						{
 							// db에서 비밀번호 변경
-							Loginframe.db.changePw(userID, Loginframe.field.getPW());
+							if ( Loginframe.db.changePw(userID, Loginframe.field.getPW()) )
 							JOptionPane.showMessageDialog(null,"변경 완료!");
+							else
+								JOptionPane.showMessageDialog(null,"변경 에러");
+							
 							Loginframe.dispose(); // 해당 로그인 창을 닫는다.
 						}
 						else
@@ -885,6 +894,15 @@ public class vendingMachine extends JFrame {
 				});
 			}
 		});
+		
+		admin.incomeBtn2.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+			   String month = JOptionPane.showInputDialog("몇월의 매출을 확인하시겠습니까?(1 - 12)");
+			   if(Integer.parseInt(month) <= 12 && Integer.parseInt(month) >= 1 )
+			    dataSend(Integer.parseInt(month) , "monthIncome");
+			   else
+			   JOptionPane.showMessageDialog(null,"1 부터 12중 숫자만 입력해주세요");
+			}			
+		});
 	}
-
 }
