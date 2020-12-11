@@ -338,8 +338,8 @@ public class vendingMachine extends JFrame {
 							myMachine.beverage[numData].nameText.setText("재고없음");
 							myMachine.beverage[numData].nameText.setHorizontalAlignment(SwingConstants.CENTER); //텍스트 가운데 정렬
 							myMachine.beverage[numData].drinkButton.setBackground(Color.gray);
-
 						}
+						
 						else if(strData.equals("drinkChange")) // 새로운 음료로 변경
 						{
 							numData = dataInputStream.readInt();
@@ -364,7 +364,7 @@ public class vendingMachine extends JFrame {
 						else if(strData.equals("fill"))  // 잔돈 보충 
 						{
 							for(int i = 0  ; i < 5 ; i++)
-							myMachine.changeState[i] = true;
+							myMachine.changeState[i] = false;
 							myMachine.screenChange();
 							list.add("잔돈 충전을 완료했습니다.");
 						}
@@ -373,6 +373,20 @@ public class vendingMachine extends JFrame {
 							numData = dataInputStream.readInt();
 							myMachine.changeState[numData] = true;
 							myMachine.screenChange();
+						}
+						else if(strData.equals("sendMail")) // 서버에게 로그인 정보를 전달한다.
+						{
+							String name = dataInputStream.readUTF();
+							dataOutputStream.writeUTF("sendMail");
+							dataOutputStream.writeUTF(userID);
+							dataOutputStream.writeUTF(name);
+						}
+						else if(strData.equals("collectlogin")) // 서버에게 수금을 위한 로그인 정보를 전달한다.
+						{
+							int sum = dataInputStream.readInt();
+							dataOutputStream.writeUTF("inputCollect");			
+							dataOutputStream.writeUTF(userID);						
+							dataOutputStream.writeInt(sum);						
 						}
 	
 					}

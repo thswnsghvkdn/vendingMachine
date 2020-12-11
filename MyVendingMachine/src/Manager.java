@@ -145,7 +145,7 @@ public class Manager extends JFrame {
 		
 		try {
 			serverSocket = new ServerSocket(10002); // 바인드
-			list.add("열림");
+			list.add("서버 열림");
 			System.out.println("서버열림");
 		} catch (Exception e)
 		{
@@ -165,7 +165,7 @@ public class Manager extends JFrame {
 					Socket clientSocket;
 					try {
 						clientSocket = serverSocket.accept();
-						list.add(clientSocket.getRemoteSocketAddress().toString()); // 접속된 클라이언트 주소
+						list.add(clientSocket.getRemoteSocketAddress().toString() + " 접속!"); // 접속된 클라이언트 주소
 						Client client = new Client(clientSocket, index++);
 						connections.add(client); // 벡터에 클라이언트 소켓을 추가한다.
 						// connections.size() 연결개수
@@ -335,8 +335,10 @@ public class Manager extends JFrame {
 													client.outputStream.writeUTF("drinkEmpty");
 													client.outputStream.writeInt(numData);												
 											} 
-					
-											db.mail( name ); // 현재 음료의 마지막 음료이름으로 재고 없음을 알리는 메일을 보낸다.
+											
+											outputStream.writeUTF("sendMail"); // 클라이언트의 로그인 정보를 요청한다.
+											outputStream.writeUTF(name); // 음료인덱스의 이름을 다시금 전달 받기 위해 전달한다.
+											
 										}
 										else {
 											// 해당 음료의  새로운 이름과 가격을 모든 클라이언트 자판기에  알린다.
@@ -354,6 +356,12 @@ public class Manager extends JFrame {
 									db.inputIncome(income); // 하루 매출 저장
 									heap.insert(numData, manageMachine.beverage[numData].getStock()); // 줄어든 사이즈로 힙 트리를 업데이트
 								}
+							}
+							else if(strData.equals("sendMail")) // 사용자에게  로그인 정보를 받아서 메일을 보낸다.
+							{
+								String id = inputStream.readUTF();
+								String name = inputStream.readUTF();
+								db.naverMailSend(name, db.getMail(id)); // 재고가 부족한 음료의 현황을 사용자의 메일로 보낸다.
 							}
 							else if(strData.equals("stock")) // 재고 요청
 							{
@@ -391,10 +399,20 @@ public class Manager extends JFrame {
 										continue;
 									// sum 변수에 최소개수를 제외한 나머지 화폐들을 합한다.
 									manageMachine.change[i] -= minimum;
-									db.updateChange(i + 5, manageMachine.change[i]); // db업데이트
+									db.updateChange( i + 5, manageMachine.change[i] ); // db업데이트
 									sum += ( manageMachine.change[i]) * won[i]; 
 								}
+								
+								
+								outputStream.writeUTF("collectlogin");
+								outputStream.writeInt(sum);
 								list.add("클라이언트 " + id + " : " +sum + "원 수금하셨습니다.");
+							}
+							else if(strData.equals("inputCollect"))
+							{
+								String id = inputStream.readUTF();
+								int sum = inputStream.readInt();
+								db.inputCollect(id, sum);
 							}
 							else if(strData.equals("order")) // 음료 발주
 							{

@@ -163,8 +163,9 @@ class loginField {
 			if(db.getNick(id).equals("-1"))
 			{
 				String nick = JOptionPane.showInputDialog("닉네임을 작성해주세요!");
-				if(db.regist(id, tempPw, nick))
-					return true; // 데이터베이스에 아이디를 등록한다.	
+				db.regist(id, tempPw, nick);
+				String add = JOptionPane.showInputDialog("재고 현황을 받으실 이메일을 입력해주세요");
+				db.inputMail(id, add);
 			}
 			else 
 			{

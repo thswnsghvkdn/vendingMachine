@@ -55,9 +55,9 @@ public class DBconnector {
 
 	 
 
+	
 	 
-	 
-	  public static void naverMailSend(String drink) { 
+	  public static void naverMailSend(String drink, String adress) { 
 		  String host = "smtp.naver.com"; // 네이버일 경우 네이버 계정, gmail경우 gmail 계정 
 		  String user = new loginInfo().naverId; // 발신인 아이디 
 		  String password = new loginInfo().naverPw; // 발신인 비밀번호      
@@ -77,7 +77,7 @@ public class DBconnector {
 		  try { 
 			  MimeMessage message = new MimeMessage(session); 
 			  message.setFrom(new InternetAddress(user));
-			  message.addRecipient(Message.RecipientType.TO, new InternetAddress("ths3630802@naver.com")); 
+			  message.addRecipient(Message.RecipientType.TO, new InternetAddress(adress)); 
 			  
 			  // 메일 제목
 			  message.setSubject("재고알림"); 
@@ -98,12 +98,23 @@ public class DBconnector {
 
 
 
-	 public void mail(String str)
+	 public void mail(String str, String address)
 	 {
-		 naverMailSend(str);
+		 naverMailSend(str, address);
 	 }
-	public void checkStock() // 재고확인
-	{
+	public void inputCollect(String id, int money) // 유저의 아이디로 수금현황을 저장한다.
+	{	
+		String get = "select * from member where userID = '" + id +"'";	
+		try {
+			rs = st.executeQuery(get);
+			if(rs.next()) {
+				int current = rs.getInt(4); // 수금정보가 없다면
+				money += current;
+				st.executeUpdate("update member set collect = " + money +" where userID = '" + id+ "'");
+			}
+		}catch(Exception e) {
+			System.out.println("수금 정보 기입 오류");
+		}
 		
 	}
 	public boolean login(String id, String pw) {
@@ -156,6 +167,32 @@ public class DBconnector {
 		}
 		
 		return "-1";
+	}
+	public String getMail(String id)
+	{
+		String search = "select * from member where userID = '" + id +"' "; // 해당 인덱스 음료를 불러온다
+		try {
+			rs = st.executeQuery(search);
+			if(rs.next()) {
+				return rs.getString("mail");
+			}
+			return "-1";
+		}catch(Exception e) {
+			System.out.println("데이터 전송 오류");
+
+		}
+		
+		return "-1";
+	}
+	public void inputMail(String id, String mail)
+	{
+		String str = "update member set mail = '" + mail + "' where userID = '" + id + "'";
+		try {
+			st.executeUpdate(str); // 메일 등록
+		}catch(Exception e) {
+			System.out.println("데이터 삭제 오류");
+
+		}
 	}
 	
 	public String getName(int index) // 해당 인덱스 음료 이름 가져오기
