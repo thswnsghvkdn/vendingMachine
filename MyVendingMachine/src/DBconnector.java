@@ -43,7 +43,7 @@ public class DBconnector {
 	 public DBconnector() {
 		 try {
 			 loginInfo lnfo = new loginInfo();
-			 con = DriverManager.getConnection("jdbc:mysql://localhost:3306/vendingmachine", "root",new loginInfo().dbPw); // 루트계정으로 DB연결
+			 con = DriverManager.getConnection("jdbc:mysql://localhost:3306/vendingmachine", "root","wkvksrl"); // 루트계정으로 DB연결
 			 st = con.createStatement();
 			 st.executeUpdate("USE machine;"); // 사용할 스키마 선정
 			 System.out.println("연결!");
@@ -52,6 +52,7 @@ public class DBconnector {
 			 System.out.println("데이터베이스 연결 오류 : " + e.getMessage());
 		 }
 	 }
+	 
 
 	 
 

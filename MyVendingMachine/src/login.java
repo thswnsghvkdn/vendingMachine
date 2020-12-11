@@ -166,6 +166,7 @@ class loginField {
 				db.regist(id, tempPw, nick);
 				String add = JOptionPane.showInputDialog("재고 현황을 받으실 이메일을 입력해주세요");
 				db.inputMail(id, add);
+				return true;
 			}
 			else 
 			{
@@ -179,7 +180,6 @@ class loginField {
 			JOptionPane.showMessageDialog(null, "비밀번호는 5자리 이상 , 숫자 혹은 특수문자를 포함하여야 합니다.");
 			return false;
 		}
-		return false;
 	}
 	
 }

@@ -354,7 +354,7 @@ public class Manager extends JFrame {
 										}
 									}
 									db.inputIncome(income); // 하루 매출 저장
-									heap.insert(numData, manageMachine.beverage[numData].getStock()); // 줄어든 사이즈로 힙 트리를 업데이트
+									heap.insert(numData, db.getAllStock(numData)); // 줄어든 사이즈로 힙 트리를 업데이트
 								}
 							}
 							else if(strData.equals("sendMail")) // 사용자에게  로그인 정보를 받아서 메일을 보낸다.
@@ -369,7 +369,7 @@ public class Manager extends JFrame {
 								outputStream.writeUTF("stock");
 								// 음료 큐에서 재고를 반환받아 클라이언트에게 전달한다.
 								for(int i = 0 ; i < 5; i++) {
-									outputStream.writeInt(manageMachine.beverage[i].queue.getStock());
+									outputStream.writeInt(db.getAllStock(i));
 								}
 								// 잔돈 재고를 클라이언트에게 제공
 								for(int i = 0 ; i < 5; i++) {
@@ -426,8 +426,8 @@ public class Manager extends JFrame {
 								
 								manageMachine.orderDrink(index, beverageName, beveragePrice, orderNum);
 								list.add("클라이언트 "+ id + "에서 " + beverageName + "음료" + orderNum + "개 발주, 가격 : " + beveragePrice);
-								heap.insert(index, manageMachine.beverage[index].getStock()); // 발주된 재고 기준으로 힙트리를 업데이트
 								db.insertDrink(index, beverageName, beveragePrice, orderNum); // DB업데이트
+								heap.insert(index, db.getAllStock(index)); // 발주된 재고 기준으로 힙트리를 업데이트
 								
 								if(stock == 0) // 현재재고가 0이 였다면 
 								{
@@ -560,9 +560,7 @@ public class Manager extends JFrame {
 	public Manager() {
 
 
-		// 재고를 기준으로 초기 최대 힙을 구성한다.
-		for(int i = 0 ; i < 5 ; i++)
-			heap.insert(i, 3);
+
 		
 		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -595,11 +593,10 @@ public class Manager extends JFrame {
 					{
 						manageMachine.newItem(i, db);
 						manageMachine.change[i] = db.getStock(i + 5); // 동전 재고
+						heap.insert(i, db.getAllStock(i)); // 힙 구성
 					}
 					
-					// 재고를 기준으로 초기 최대 힙을 구성한다.
-					for(int i = 0 ; i < 5 ; i++)
-						heap.insert(i, db.getStock(i));
+
 					
 					serverSetting();
 					Start.setText("서버종료");

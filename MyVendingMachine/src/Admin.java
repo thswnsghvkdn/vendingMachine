@@ -17,6 +17,20 @@ import java.awt.event.ActionEvent;
 import javax.swing.JLabel;
 
 
+/* 프로그램 명 : admin
+ * 1개의 main 함수
+ * 3개의 클래스
+ * 프로그램의 구성환경 : 
+ * Windows 10
+ * eclipse 2020 - 09
+ * JDK 14 
+ * Java EE IDE
+ * 작성자 : 손준호 
+ * 프로그램의 실행결과 
+ * : 관리자 페이지 부분 
+ * 주요 기능들은 자판기쪽 정보와 연동 되기에 자판기 부분에서 구현을 하였읍니다.
+ *
+ */
 
 
 public class Admin extends JFrame {

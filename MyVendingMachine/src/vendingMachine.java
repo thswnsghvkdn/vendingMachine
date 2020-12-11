@@ -674,7 +674,7 @@ public class vendingMachine extends JFrame {
 		button_2.addActionListener(new ActionListener() // 2번 음료수 버튼 클릭
 		{
 			public void actionPerformed(ActionEvent e) {
-				if(myMachine.pressDrink(1) == 1)
+				if(myMachine.pressDrink(1) == 1) {
 				 dataSend(1 , "drink"); // 서버에 인덱스를 보낸다.
 				outlet.setIcon(new ImageIcon(vendingMachine.class.getResource("/Image/soda.png")));
 				 Timer timer = new Timer(1250, new ActionListener() {
@@ -685,13 +685,13 @@ public class vendingMachine extends JFrame {
 				      });
 				    timer.setRepeats(false);
 				     timer.start();
-
+				}
 			}
 		});
 		button_3.addActionListener(new ActionListener() // 3번 음료수 버튼 클릭
 		{
 			public void actionPerformed(ActionEvent e) {
-				if(myMachine.pressDrink(2) == 1)
+				if(myMachine.pressDrink(2) == 1) {
 				 dataSend(2 , "drink"); // 서버에 인덱스를 보낸다.
 				outlet.setIcon(new ImageIcon(vendingMachine.class.getResource("/Image/energy.png")));
 				 Timer timer = new Timer(1250, new ActionListener() {
@@ -702,12 +702,13 @@ public class vendingMachine extends JFrame {
 				      });
 				    timer.setRepeats(false);
 				     timer.start();
+				}
 			}
 		});
 		button_4.addActionListener(new ActionListener() // 4번 음료수 버튼 클릭
 		{
 			public void actionPerformed(ActionEvent e) {
-				if(myMachine.pressDrink(3) == 1)
+				if(myMachine.pressDrink(3) == 1) {
 				 dataSend(3 , "drink"); // 서버에 인덱스를 보낸다.
 				outlet.setIcon(new ImageIcon(vendingMachine.class.getResource("/Image/coffee.png")));
 				 Timer timer = new Timer(1250, new ActionListener() {
@@ -718,12 +719,14 @@ public class vendingMachine extends JFrame {
 				      });
 				    timer.setRepeats(false);
 				     timer.start();
+				}
 			}
 		});
 		button_5.addActionListener(new ActionListener() // 5번 음료수 버튼 클릭
 		{
 			public void actionPerformed(ActionEvent e) {
-				if(myMachine.pressDrink(4) == 1) // 매출
+				if(myMachine.pressDrink(4) == 1) // 매출 
+					{
 				 dataSend(4 , "drink"); // 서버에 인덱스를 보낸다.
 				outlet.setIcon(new ImageIcon(vendingMachine.class.getResource("/Image/starbucks.png")));
 				 Timer timer = new Timer(1250, new ActionListener() {
@@ -734,7 +737,8 @@ public class vendingMachine extends JFrame {
 				      });
 				    timer.setRepeats(false);
 				     timer.start();
-			}
+					}
+				}
 		});
 		button_6.addActionListener(new ActionListener() // 6번 음료수 버튼 클릭
 		{
