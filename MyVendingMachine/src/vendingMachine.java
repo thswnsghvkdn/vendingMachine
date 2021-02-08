@@ -19,7 +19,20 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
-
+/* 프로그램 명 : vendingMachine
+ * 1개의 main 함수
+ * 3개의 클래스
+ * 프로그램의 구성환경 : 
+ * Windows 10
+ * eclipse 2020 - 09
+ * JDK 14 
+ * Java EE IDE
+ * 작성자 : 손준호 
+ * 프로그램의 실행결과 
+ * : 자판기 클라이언트 부분
+ * 
+ *
+ */
 
 class Beverage // 음료수 클래스
 {
@@ -35,13 +48,18 @@ class Beverage // 음료수 클래스
 }
 
 
+/*
+ * 자판기 클래스 
+ * 자판기의 음료와 화폐들을 관리하는 클래스 
+ * 
+ */
 class Machine
 {
 	public boolean[] changeState = new boolean[5]; // 잔돈 재고 상태 
 
 	int dollarLimit = 0; // 천원 상한선
 	int won[] = {10 , 50 , 100 , 500 ,1000};
-	private String id;
+	private String id; //  사용자 아이디
 	JLabel changeScreen; // 잔돈현황 스크린
 	JLabel inputScreen; // 삽입한 돈이 나오는 스크린
 	int tempMoney; // 사용자가 삽입한 돈
@@ -56,6 +74,8 @@ class Machine
 
 	}
 	
+
+	 // 투입금액 스크린 
 	public void screenChange()
 	{
 		boolean allClear = true; // 모든 재고가 있는지 판단.
@@ -170,11 +190,17 @@ class Machine
 	
 }
 
+// 사용자 예외
 class MyException extends Exception{
 	public MyException(String s) {
 		super(s);
 	}
 }
+
+/*
+ * gui 부분 
+ * 
+ */
 public class vendingMachine extends JFrame {
 	JLabel outlet;
 	JLabel Image1;
@@ -798,8 +824,13 @@ public class vendingMachine extends JFrame {
 		});
 	}
 	
-	private void adminButtonFunction(Admin admin) // 관리자 페이지 버튼 기능 등록
-	{
+	/*
+	 * 관리자 페이지의 버튼의 기능을 추가하는 부분
+	 */
+	
+	private void adminButtonFunction(Admin admin) 
+	{ 
+		// 잔돈 버튼 서버에 정보를 요청한다.
 		admin.changeBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				 dataSend(1 , "change");

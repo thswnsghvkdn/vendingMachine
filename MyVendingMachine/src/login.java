@@ -13,6 +13,22 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.JOptionPane;
 import lib.Stack;
 
+
+/* 프로그램 명 : login
+ * 1개의 main 함수
+ * 3개의 클래스
+ * 프로그램의 구성환경 : 
+ * Windows 10
+ * eclipse 2020 - 09
+ * JDK 14 
+ * Java EE IDE
+ * 작성자 : 손준호 
+ * 프로그램의 실행결과 
+ * : 로그인 화면
+ * 
+ *
+ */
+
 class Keyboard // 키보드 객체
 {
 	boolean shift;

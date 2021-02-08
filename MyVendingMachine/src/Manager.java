@@ -24,6 +24,22 @@ import javax.swing.JButton;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
+
+/* 프로그램 명 : vendingMachine
+ * 1개의 main 함수
+ * 3개의 클래스
+ * 프로그램의 구성환경 : 
+ * Windows 10
+ * eclipse 2020 - 09
+ * JDK 14 
+ * Java EE IDE
+ * 작성자 : 손준호 
+ * 프로그램의 실행결과 
+ * : 서버 부분 클라이언트의 요청에 따라 DB에 저장되어 있는 정보를  전달한다.
+ * 
+ *
+ */
+
 class DrinkStock {
 	public int stock; // 음료의 재고
 	public int index; // 음료의 인덱스

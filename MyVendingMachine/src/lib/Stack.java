@@ -1,5 +1,21 @@
 package lib;
 
+
+/* 프로그램 명 : stack
+ * 1개의 main 함수
+ * 3개의 클래스
+ * 프로그램의 구성환경 : 
+ * Windows 10
+ * eclipse 2020 - 09
+ * JDK 14 
+ * Java EE IDE
+ * 작성자 : 손준호 
+ * 프로그램의 실행결과 
+ * : 로그인 키보드 백스페이스를 구현하기 위해 스택을 사용했습니다.
+ * 
+ *
+ */
+
 class Node {
 	private String data;
 	private Node nextNode;

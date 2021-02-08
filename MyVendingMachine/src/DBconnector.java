@@ -23,6 +23,20 @@ import javax.mail.internet.MimeMultipart;
 import javax.swing.JOptionPane;
 
 
+/* 프로그램 명 : DBconnector
+ * 1개의 main 함수
+ * 3개의 클래스
+ * 프로그램의 구성환경 : 
+ * Windows 10
+ * eclipse 2020 - 09
+ * JDK 14 
+ * Java EE IDE
+ * 작성자 : 손준호 
+ * 프로그램의 실행결과 
+ * : DB부분 mysql로 구현하였으나 원격접속에 실패하였습니다.
+ * 
+ *
+ */
 
 public class DBconnector {
 	
